@@ -1,0 +1,15 @@
+[run]
+source = km3irf
+
+[report]
+omit =
+    src/km3irf/version.py
+exclude_lines =
+    pragma: no cover
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    if self.debug:
+    if settings.DEBUG
+    def __repr__
