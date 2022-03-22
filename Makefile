@@ -3,6 +3,7 @@ install:
 
 install-dev:
 	pip install -e ".[dev]"
+	python -m ipykernel install --user --name=km3irf
 
 clean:
 	python setup.py clean --all
