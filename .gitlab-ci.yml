@@ -17,10 +17,13 @@ stages:
 
 .virtualenv_template: &virtualenv_definition |
   python -V
-  pip install virtualenv
-  virtualenv venv
+  python3 -m venv venv
   source venv/bin/activate
+  pip install -U pip setuptools wheel setuptools_scm
+  hash -r
+  pip freeze
   make install-dev
+  pip freeze
 
 .junit_template: &junit_definition
     artifacts:
