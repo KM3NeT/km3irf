@@ -1,4 +1,3 @@
-# from importlib_resources import files
 from glob import glob
 from os.path import getsize
 from prettytable import PrettyTable
@@ -14,5 +13,5 @@ def list_data(tab=tab):
 
     print(tab)
 
-#list_data()
+# list_data()
 
