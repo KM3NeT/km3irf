@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from .calc import Calculator
 from astropy.io import fits
+from os import path
+data_dir = path.join(path.dirname(__file__), 'data')
 
 
 def print_multiplication_table(base):
@@ -11,10 +13,15 @@ def print_multiplication_table(base):
         print("{} x {} = {}".format(base, i, calculator.multiply(base, i)))
 
 
-def merge_fits(aeff_fits="./data/aeff.fits", 
-               psf_fits="./data/psf.fits", 
-               edisp_fits="./data/edisp.fits",
-               bkg_fits="./data/bkg_nu.fits",
+# def merge_fits(aeff_fits="./data/aeff.fits", 
+#                psf_fits="./data/psf.fits", 
+#                edisp_fits="./data/edisp.fits",
+#                bkg_fits="./data/bkg_nu.fits",
+#                output_file='all_in_one.fits'):
+def merge_fits(aeff_fits=path.join(data_dir, "aeff.fits"), 
+               psf_fits=path.join(data_dir, "psf.fits"), 
+               edisp_fits=path.join(data_dir, "edisp.fits"),
+               bkg_fits=path.join(data_dir, "bkg_nu.fits"),
                output_file='all_in_one.fits'):
     """Merge separated fits files into one, which can be used in gammapy"""
     hdu_list = []
