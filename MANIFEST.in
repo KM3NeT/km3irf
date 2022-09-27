@@ -1,6 +1,4 @@
 include README.rst
 include LICENSE
 
-graft src/km3irf
-
-# recursive-include src/km3irf/data
+ recursive-include src/km3irf/data

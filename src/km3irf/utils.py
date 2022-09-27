@@ -3,6 +3,10 @@
 from .calc import Calculator
 from astropy.io import fits
 from os import path
+from glob import glob
+from os.path import getsize
+from prettytable import PrettyTable
+from importlib_resources import files
 data_dir = path.join(path.dirname(__file__), 'data')
 
 
@@ -13,11 +17,6 @@ def print_multiplication_table(base):
         print("{} x {} = {}".format(base, i, calculator.multiply(base, i)))
 
 
-# def merge_fits(aeff_fits="./data/aeff.fits", 
-#                psf_fits="./data/psf.fits", 
-#                edisp_fits="./data/edisp.fits",
-#                bkg_fits="./data/bkg_nu.fits",
-#                output_file='all_in_one.fits'):
 def merge_fits(aeff_fits=path.join(data_dir, "aeff.fits"), 
                psf_fits=path.join(data_dir, "psf.fits"), 
                edisp_fits=path.join(data_dir, "edisp.fits"),
@@ -26,22 +25,6 @@ def merge_fits(aeff_fits=path.join(data_dir, "aeff.fits"),
     """Merge separated fits files into one, which can be used in gammapy"""
     hdu_list = []
     hdu_list.append(fits.PrimaryHDU())
-
-    # with fits.open(aeff_fits) as file_aeff:
-    #     hdu_list.append(file_aeff[1])
-    # hdu_list[1].name = 'EFFECTIVE AREA'
-
-    # with fits.open(psf_fits) as file_psf:
-    #     hdu_list.append(file_psf[1])
-    # hdu_list[2].name = 'POINT SPREAD FUNCTION'
-
-    # with fits.open(edisp_fits) as file_edisp:
-    #     hdu_list.append(file_edisp[1])
-    # hdu_list[3].name = 'ENERGY DISPERSION'
-
-    # with fits.open(bkg_fits) as file_bkg:
-    #     hdu_list.append(file_bkg[1])
-    # hdu_list[4].name = 'BACKGROUND'
 
     file_aeff = fits.open(aeff_fits) 
     hdu_list.append(file_aeff[1])
@@ -66,5 +49,17 @@ def merge_fits(aeff_fits=path.join(data_dir, "aeff.fits"),
     file_psf.close()
     file_edisp.close()
     file_bkg.close()
+
+def list_data():
+    """Prints the table with content of data folder"""
+    tab = PrettyTable(["File Path","Size, KB"], align="l")
+    # data_path = path.join(f"{files('km3irf')}","data","*.fits")
+    data_path = path.join(data_dir,"*.fits")
+    # for file in glob(f"{files('km3irf')}/data/*.fits", recursive=True):
+    for file in glob(data_path, recursive=True):
+        #add row with file name and size in KB
+        tab.add_row([file, round(getsize(filename=file)/float(1<<10), 2)])
+
+    print(tab)
 
 # merge_fits()
