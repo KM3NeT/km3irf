@@ -76,9 +76,8 @@ def list_data(print_tab=False):
     for file, i in zip(glob(data_path, recursive=True), listdir(data_dir)):
         tab.add_row([file, round(getsize(filename=file) / float(1 << 10), 2)])
         info.update({i: file})
-
-    if print_tab:    
+    # show something
+    if print_tab:
         print(tab)
-    
-    return info
 
+    return info
