@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import unittest
+from os import path, listdir, curdir, remove
 
 from km3irf import Calculator
+from km3irf.utils import (
+    merge_fits,
+    list_data
+)
 
 
 class TestCalculator(unittest.TestCase):
@@ -33,3 +38,13 @@ class TestCalculator(unittest.TestCase):
     def test_multiply_with_zero(self):
         for b in range(100):
             assert 0 == self.calculator.multiply(0, b)
+
+class TestUtils(unittest.TestCase):
+    def test_merge_fits(self):
+        merge_fits()
+        self.test_path = path.abspath(curdir)
+        self.test_path = path.join(self.test_path, "src", "km3irf", "data")
+        assert "all_in_one.fits" in listdir(self.test_path)
+        remove(path.join(self.test_path, "all_in_one.fits"))
+        assert "all_in_one.fits" not in listdir(self.test_path)
+
