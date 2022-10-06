@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 from os import path, listdir, curdir, remove
+import astropy
 
 from km3irf import Calculator
 from km3irf.utils import (
