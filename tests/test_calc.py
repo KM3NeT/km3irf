@@ -41,11 +41,14 @@ class TestCalculator(unittest.TestCase):
             assert 0 == self.calculator.multiply(0, b)
 
 class TestUtils(unittest.TestCase):
+    def setUp(self):
+        self.test_path = path.join(path.abspath(curdir), "src", "km3irf", "data")
+
     def test_merge_fits(self):
         merge_fits()
-        self.test_path = path.abspath(curdir)
-        self.test_path = path.join(self.test_path, "src", "km3irf", "data")
         assert "all_in_one.fits" in listdir(self.test_path)
         remove(path.join(self.test_path, "all_in_one.fits"))
         assert "all_in_one.fits" not in listdir(self.test_path)
 
+    def test_list_data(self):
+        assert len(list_data()) == len(listdir(self.test_path))
