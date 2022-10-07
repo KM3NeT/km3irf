@@ -30,9 +30,13 @@ def merge_fits(
     Merge separated fits files into one, which can be used in gammapy
 
     aeff_fits: path to Aeff .fits file
+
     psf_fits: path  to PSF .fits file
+
     edisp_fits: path to Edisp .fits file
+
     bkg_fits: path to Background .fits file
+    
     output_file: name of the merged .fits file in data foledr of the package
     """
     hdu_list = []
