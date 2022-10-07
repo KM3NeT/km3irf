@@ -47,8 +47,6 @@ class TestUtils(unittest.TestCase):
     def test_merge_fits(self):
         merge_fits()
         assert "all_in_one.fits" in listdir(self.test_path)
-        remove(path.join(self.test_path, "all_in_one.fits"))
-        assert "all_in_one.fits" not in listdir(self.test_path)
 
     def test_list_data(self):
         assert len(list_data()) == len(listdir(self.test_path))
