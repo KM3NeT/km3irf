@@ -5,10 +5,7 @@ from os import path, listdir, curdir, remove
 import astropy
 
 from km3irf import Calculator
-from km3irf.utils import (
-    merge_fits,
-    list_data
-)
+from km3irf.utils import merge_fits, list_data
 
 
 class TestCalculator(unittest.TestCase):
@@ -39,6 +36,7 @@ class TestCalculator(unittest.TestCase):
     def test_multiply_with_zero(self):
         for b in range(100):
             assert 0 == self.calculator.multiply(0, b)
+
 
 class TestUtils(unittest.TestCase):
     def setUp(self):

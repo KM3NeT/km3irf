@@ -36,7 +36,7 @@ def merge_fits(
     edisp_fits: path to Edisp .fits file
 
     bkg_fits: path to Background .fits file
-    
+
     output_file: name of the merged .fits file in data foledr of the package
     """
     hdu_list = []
