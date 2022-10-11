@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import unittest
+from os import path, listdir, curdir, remove
+import astropy
 
 from km3irf import Calculator
+from km3irf.utils import merge_fits, list_data
 
 
 class TestCalculator(unittest.TestCase):
@@ -33,3 +36,15 @@ class TestCalculator(unittest.TestCase):
     def test_multiply_with_zero(self):
         for b in range(100):
             assert 0 == self.calculator.multiply(0, b)
+
+
+class TestUtils(unittest.TestCase):
+    def setUp(self):
+        self.test_path = path.join(path.abspath(curdir), "src", "km3irf", "data")
+
+    def test_merge_fits(self):
+        merge_fits()
+        assert "all_in_one.fits" in listdir(self.test_path)
+
+    def test_list_data(self):
+        assert len(list_data()) == len(listdir(self.test_path))
