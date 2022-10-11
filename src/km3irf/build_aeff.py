@@ -122,8 +122,9 @@ def unpack_data(no_bdt, type, km3io_file, uproot_file):
 
     return df_data
 
-    def get_cut_mask(bdt0, bdt1, dir_z):
-    '''
+def get_cut_mask(bdt0, bdt1, dir_z):
+    """
+    
     bdt0: to determine groups to which BDT cut should be applied (upgoing/horizontal/downgoing)
 
     bdt1: BDT score in the range [-1, 1]. Closer to 1 means more signal-like
@@ -131,7 +132,8 @@ def unpack_data(no_bdt, type, km3io_file, uproot_file):
     dir_z: is the reconstructed z-direction of the event
 
     return a mask for set cuts
-    '''
+    """
+
     mask_down = bdt0 >= 11  # remove downgoing events
     clear_signal = bdt0 == 12 # very clear signal
     loose_up = (np.arccos(dir_z)*180/np.pi < 80) & (bdt1 > 0.) # apply loose cut on upgoing events
