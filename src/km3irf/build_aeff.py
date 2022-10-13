@@ -5,12 +5,14 @@ import awkward as ak
 import pandas as pd
 import uproot as ur
 from km3io import OfflineReader
+from irf_tools import aeff_2D
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
 from astropy.io import fits
 import astropy.units as u
+from astropy.io import fits
 
 # from gammapy.irf import EnergyDispersion2D
 
@@ -35,7 +37,8 @@ def build_aeff(
     cuts=True, 
     weight_factor=-2.5,
     cos_theta_binE=np.linspace(1, -1, 13),
-    energy_binE=np.logspace(2, 8, 49)
+    energy_binE=np.logspace(2, 8, 49),
+    output="aeff.fits"
 ):
     """
     Create Aeff .fits from dist files
@@ -51,6 +54,8 @@ def build_aeff(
     cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
 
     energy_binE: log numpy array of enegy bins
+
+    output: name of generated Aeff file with extension .fits
 
     """
 
@@ -88,12 +93,23 @@ def build_aeff(
     # Define bins for Aeff
     # cos_bins_fine = np.linspace(1, -1, 13)
     theta_binE = np.arccos(cos_theta_binE)
-    # e_bins_fine = np.logspace(2, 8, 49)
+    # energy_binE = np.logspace(2, 8, 49)
 
     # Bin centers
     energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
     theta_binC = np.arccos(0.5*(cos_theta_binE[:-1] + cos_theta_binE[1:]))
 
+    # Fill histograms for effective area
+    aeff_all = aeff_2D(
+        e_bins  = energy_binE,
+        t_bins  = theta_binE,
+        dataset = df_nu_all,
+        gamma   = (-weight_factor),
+        nevents = f_nu_km3io.header.genvol.numberOfEvents + f_nubar_km3io.header.genvol.numberOfEvents
+    ) * 2 # two building blocks
+
+    new_aeff_file = WriteAeff(energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist=aeff_all)
+    new_aeff_file.to_fits(file_name=output)
 
 def unpack_data(no_bdt, type, km3io_file, uproot_file):
     """
@@ -159,3 +175,36 @@ def get_cut_mask(bdt0, bdt1, dir_z):
     strong_horizontal = (np.arccos(dir_z)*180/np.pi > 80) & (bdt1 > 0.7) # apply strong cut on horizontal events
     
     return mask_down & ( clear_signal | loose_up | strong_horizontal )
+
+# Class for writing aeff_2D to fits files
+class WriteAeff:
+
+    def __init__(self, energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist):
+        self.col1 = fits.Column(name='ENERG_LO', format='{}E'.format(len(energy_binC)), unit='GeV', array=[energy_binE[:-1]])
+        self.col2 = fits.Column(name='ENERG_HI', format='{}E'.format(len(energy_binC)), unit='GeV', array=[energy_binE[1:]])
+        self.col3 = fits.Column(name='THETA_LO', format='{}E'.format(len(theta_binC)), unit='rad', array=[theta_binE[:-1]])
+        self.col4 = fits.Column(name='THETA_HI', format='{}E'.format(len(theta_binC)), unit='rad', array=[theta_binE[1:]])
+        self.col5 = fits.Column(name='EFFAREA', format='{}D'.format(len(energy_binC)*len(theta_binC)),
+                        dim='({},{})'.format(len(energy_binC), len(theta_binC)), unit='m2', array=[aeff_hist])
+
+    def to_fits(self, file_name):
+        """ 
+        write .fits file
+
+        file_name: should have .fits extension
+        """
+        cols = fits.ColDefs([self.col1, self.col2, self.col3, self.col4, self.col5])
+        hdu = fits.PrimaryHDU()
+        hdu2 = fits.BinTableHDU.from_columns(cols)
+        hdu2.header['EXTNAME'] = 'EFFECTIVE AREA'
+        hdu2.header['HDUDOC'] = 'https://github.com/open-gamma-ray-astro/gamma-astro-data-formats'
+        hdu2.header['HDUVERS'] = '0.2'
+        hdu2.header['HDUCLASS'] = 'GADF'
+        hdu2.header['HDUCLAS1'] = 'RESPONSE'
+        hdu2.header['HDUCLAS2'] = 'EFF_AREA'
+        hdu2.header['HDUCLAS3'] = 'FULL-ENCLOSURE'
+        hdu2.header['HDUCLAS4'] = 'AEFF_2D'
+        aeff_fits = fits.HDUList([hdu, hdu2])
+        aeff_fits.writeto(file_name, overwrite=True)
+
+        return print(f'file {file_name} is written successfully!')
