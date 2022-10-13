@@ -33,7 +33,9 @@ def build_aeff(
     input=(file_nu, file_nubar), 
     no_bdt=False, 
     cuts=True, 
-    weight_factor=-2.5
+    weight_factor=-2.5,
+    cos_theta_binE=np.linspace(1, -1, 13),
+    energy_binE=np.logspace(2, 8, 49)
 ):
     """
     Create Aeff .fits from dist files
@@ -45,6 +47,10 @@ def build_aeff(
     cuts: apply cuts, default True
 
     weight_factor: re-weight data, default value  -2.5
+
+    cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
+
+    energy_binE: log numpy array of enegy bins
 
     """
 
@@ -63,17 +69,30 @@ def build_aeff(
 
     if cuts:
         mask_nu = get_cut_mask(df_nu.bdt0, df_nu.bdt1, df_nu.dir_z)
-        df_nu_cut = df_nu[mask_nu].copy()
+        df_nu = df_nu[mask_nu].copy()
         mask_nubar = get_cut_mask(df_nubar.bdt0, df_nubar.bdt1, df_nubar.dir_z)
-        df_nubar_cut = df_nubar[mask_nubar].copy()
+        df_nubar = df_nubar[mask_nubar].copy()
 
-        # calculate the normalized weight factor for each event
-        weights = dict()
-        for l, df in zip(['nu', 'nubar'], [df_nu_cut, df_nubar_cut]):
-            weights[l] = (df.energy_mc**(weight_factor - alpha_value)).to_numpy()
-            weights[l] *= len(df) / weights[l].sum()
+    # calculate the normalized weight factor for each event
+    weights = dict()
+    for l, df in zip(['nu', 'nubar'], [df_nu, df_nubar]):
+        weights[l] = (df.energy_mc**(weight_factor - alpha_value)).to_numpy()
+        weights[l] *= len(df) / weights[l].sum()
 
-    
+    # Create DataFrames with neutrinos and anti-neutrinos
+    df_nu_all = pd.concat([df_nu, df_nubar], ignore_index=True)
+
+    # Also create a concatenated array for the weights
+    weights_all = np.concatenate([weights['nu'], weights['nubar']])
+
+    # Define bins for Aeff
+    # cos_bins_fine = np.linspace(1, -1, 13)
+    theta_binE = np.arccos(cos_theta_binE)
+    # e_bins_fine = np.logspace(2, 8, 49)
+
+    # Bin centers
+    energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
+    theta_binC = np.arccos(0.5*(cos_theta_binE[:-1] + cos_theta_binE[1:]))
 
 
 def unpack_data(no_bdt, type, km3io_file, uproot_file):
