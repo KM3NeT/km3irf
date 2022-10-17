@@ -24,6 +24,7 @@ def merge_fits(
     psf_fits=path.join(data_dir, "psf.fits"),
     edisp_fits=path.join(data_dir, "edisp.fits"),
     bkg_fits=path.join(data_dir, "bkg_nu.fits"),
+    output_path= data_dir,
     output_file="all_in_one.fits",
 ):
     """
@@ -36,6 +37,8 @@ def merge_fits(
     edisp_fits: path to Edisp .fits file
 
     bkg_fits: path to Background .fits file
+
+    output_path: path for the merged IRF file
 
     output_file: name of the merged .fits file in data foledr of the package
     """
@@ -59,7 +62,7 @@ def merge_fits(
     hdu_list[4].name = "BACKGROUND"
 
     new_fits_file = fits.HDUList(hdu_list)
-    new_fits_file.writeto(path.join(data_dir, output_file), overwrite=True)
+    new_fits_file.writeto(path.join(output_path, output_file), overwrite=True)
 
     file_aeff.close()
     file_psf.close()
