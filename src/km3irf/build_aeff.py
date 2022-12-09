@@ -29,7 +29,12 @@ from scipy.stats import binned_statistic
 # from python_scripts.func import WritePSF
 
 
-def build_aeff(
+class BuildAeff:
+    def __init__(self, infile, tag):
+        pass
+
+
+def retrive_aeff(
     input,
     tag="nu",
     no_bdt=False,
@@ -85,7 +90,7 @@ def build_aeff(
     #     weights[l] = (df.energy_mc ** (weight_factor - alpha_value)).to_numpy()
     #     weights[l] *= len(df) / weights[l].sum()
 
-    # Needs to continue here
+    # Weights are not used for Aeff only Edisp and PSF
     weights = {tag: df}
     weights[tag] = (df.energy_mc ** (weight_factor - alpha_value)).to_numpy()
     weights[tag] *= len(df) / weights[tag].sum()
@@ -127,10 +132,18 @@ def build_aeff(
     )
     new_aeff_file.to_fits(file_name=output)
 
+    return None
+
+
+def build_Aeff(
+    infile,
+):
+    pass
+
 
 def unpack_data(no_bdt, type, km3io_file, uproot_file):
     """
-    retrieve information from data and pack it to DataFrame
+    retrieve information from data and pack it to pandas DataFrame
 
     type: "nu" or "nubar"
 
@@ -236,7 +249,7 @@ class WriteAeff:
 
     def to_fits(self, file_name):
         """
-        write .fits file
+        write Aeff to .fits file
 
         file_name: should have .fits extension
         """
