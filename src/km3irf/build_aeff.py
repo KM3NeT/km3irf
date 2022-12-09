@@ -87,9 +87,12 @@ def build_aeff(
 
     # Needs to continue here
     weights = {tag: df}
-    for l, df in zip(["nu", "nubar"], [df_nu, df_nubar]):
-        weights[l] = (df.energy_mc ** (weight_factor - alpha_value)).to_numpy()
-        weights[l] *= len(df) / weights[l].sum()
+    weights[tag] = (df.energy_mc ** (weight_factor - alpha_value)).to_numpy()
+    weights[tag] *= len(df) / weights[tag].sum()
+
+    # for l, df in zip(["nu", "nubar"], [df_nu, df_nubar]):
+    #     weights[l] = (df.energy_mc ** (weight_factor - alpha_value)).to_numpy()
+    #     weights[l] *= len(df) / weights[l].sum()
 
     # Create DataFrames with neutrinos and anti-neutrinos
     df_nu_all = pd.concat([df_nu, df_nubar], ignore_index=True)
