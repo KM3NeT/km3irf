@@ -33,6 +33,7 @@ doc/_build/
 doc/auto_examples/
 doc/gen_modules/*.examples
 doc/api
+doc/autoapi/
 
 # Virtual env
 venv
