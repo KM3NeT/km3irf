@@ -30,8 +30,52 @@ from scipy.stats import binned_statistic
 
 
 class BuildAeff:
-    def __init__(self, infile, tag):
-        pass
+    def __init__(self, infile, tag, no_bdt=False):
+        self.f_km3io = OfflineReader(infile)
+        self.f_uproot = ur.open(infile)
+        self.df = unpack_data(no_bdt, tag, self.f_km3io, self.f_uproot)
+
+    def apply_cuts(self):
+        mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
+        df_cut = self.df[mask].copy()
+        return df_cut
+
+    def merge_flavors(self, df_nu, df_nubar):
+        df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
+        return df_merged
+
+    def build(
+        self,
+        df_pass,
+        weight_factor=-2.5,
+        cos_theta_binE=np.linspace(1, -1, 13),
+        energy_binE=np.logspace(2, 8, 49),
+        output="aeff.fits",
+    ):
+        theta_binE = np.arccos(cos_theta_binE)
+        # Bin centers
+        energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
+        theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
+
+        # Fill histograms for effective area
+        # !!! Check number of events uproot vs pandas
+        aeff_all = (
+            aeff_2D(
+                e_bins=energy_binE,
+                t_bins=theta_binE,
+                dataset=df_pass,
+                gamma=(-weight_factor),
+                nevents=df_pass.shape[0],
+            )
+            * 2
+        )  # two building blocks
+
+        new_aeff_file = WriteAeff(
+            energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist=aeff_all
+        )
+        new_aeff_file.to_fits(file_name=output)
+
+        return None
 
 
 def retrive_aeff(
@@ -133,12 +177,6 @@ def retrive_aeff(
     new_aeff_file.to_fits(file_name=output)
 
     return None
-
-
-def build_Aeff(
-    infile,
-):
-    pass
 
 
 def unpack_data(no_bdt, type, km3io_file, uproot_file):
