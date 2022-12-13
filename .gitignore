@@ -40,3 +40,5 @@ venv
 
 # Others
 src/km3irf/data/all_in_one.fits
+use_cases/*.fits
+use_cases/.ipynb_checkpoints/

@@ -5,7 +5,7 @@ import awkward as ak
 import pandas as pd
 import uproot as ur
 from km3io import OfflineReader
-from irf_tools import aeff_2D
+from .irf_tools import aeff_2D
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -37,8 +37,10 @@ class BuildAeff:
 
     def apply_cuts(self):
         mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
-        df_cut = self.df[mask].copy()
-        return df_cut
+        self.df = self.df[mask].copy()
+        return None
+        # df_cut = self.df[mask].copy()
+        # return df_cut
 
     def merge_flavors(self, df_nu, df_nubar):
         df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
