@@ -47,4 +47,5 @@ class TestUtils(unittest.TestCase):
         assert "all_in_one.fits" in listdir(self.test_path)
 
     def test_list_data(self):
-        assert len(list_data()) == len(listdir(self.test_path))
+        numb_fits = [i for i in listdir(self.test_path) if ".fits" in i]
+        assert len(list_data()) == len(numb_fits)
