@@ -33,6 +33,12 @@ doc/_build/
 doc/auto_examples/
 doc/gen_modules/*.examples
 doc/api
+doc/autoapi/
 
 # Virtual env
 venv
+
+# Others
+src/km3irf/data/all_in_one.fits
+use_cases/*.fits
+use_cases/.ipynb_checkpoints/

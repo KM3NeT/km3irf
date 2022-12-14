@@ -5,7 +5,7 @@ import awkward as ak
 import pandas as pd
 import uproot as ur
 from km3io import OfflineReader
-from irf_tools import aeff_2D
+from .irf_tools import aeff_2D
 
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
@@ -14,11 +14,7 @@ from astropy.io import fits
 import astropy.units as u
 from astropy.io import fits
 
-# from gammapy.irf import EnergyDispersion2D
-
 from scipy.stats import binned_statistic
-
-# from scipy.ndimage import gaussian_filter1d, gaussian_filter
 
 
 # from collections import defaultdict
@@ -31,97 +27,97 @@ from scipy.stats import binned_statistic
 # from python_scripts.func import WritePSF
 
 
-def build_aeff(
-    input=(file_nu, file_nubar), 
-    no_bdt=False, 
-    cuts=True, 
-    weight_factor=-2.5,
-    cos_theta_binE=np.linspace(1, -1, 13),
-    energy_binE=np.logspace(2, 8, 49),
-    output="aeff.fits"
-):
-    """
-    Create Aeff .fits from dist files
+class BuildAeff:
+    def __init__(self, infile, tag, no_bdt=False):
+        self.f_km3io = OfflineReader(infile)
+        self.f_uproot = ur.open(infile)
+        self.df = unpack_data(no_bdt, tag, self.f_km3io, self.f_uproot)
 
-    input: a tuple with pathes to nu_dst file and nubar_dst file
+    def apply_cuts(self):
+        """
+        Apply cuts to the created data frame
 
-    no_bdt: include or exclude bdt, default False
+        """
+        mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
+        self.df = self.df[mask].copy()
+        return None
+        # df_cut = self.df[mask].copy()
+        # return df_cut
 
-    cuts: apply cuts, default True
+    def merge_flavors(self, df_nu, df_nubar):
+        """
+        Merge two data frames with differnt flavors in one
 
-    weight_factor: re-weight data, default value  -2.5
+        df_nu: data frame for 'nu'
 
-    cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
+        df_nubar: data frame for 'nubar'
 
-    energy_binE: log numpy array of enegy bins
+        return the merged pandas data frame
 
-    output: name of generated Aeff file with extension .fits
+        """
+        df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
+        return df_merged
 
-    """
+    def build(
+        self,
+        df_pass,
+        weight_factor=-2.5,
+        cos_theta_binE=np.linspace(1, -1, 13),
+        energy_binE=np.logspace(2, 8, 49),
+        output="aeff.fits",
+    ):
+        """
+        Build Effective Area 2D .fits
 
-    # Read data files using km3io
-    f_nu_km3io = OfflineReader(input[0])
-    f_nubar_km3io = OfflineReader(input[1])
+        df_pass: incoming data frame
 
-    # Read data files using uproot
-    f_nu_uproot = ur.open(input[0])
-    f_nubar_uproot = ur.open(input[1])
+        weight_factor: re-weight data, default value  -2.5
 
-    df_nu = unpack_data(no_bdt, "nu", f_nu_km3io, f_nu_uproot)
-    df_nubar = unpack_data(no_bdt, "nubar", f_nubar_km3io, f_nubar_uproot)
+        cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
 
-    alpha_value = f_nu_km3io.header.spectrum.alpha
+        energy_binE: log numpy array of enegy bins
 
-    if cuts:
-        mask_nu = get_cut_mask(df_nu.bdt0, df_nu.bdt1, df_nu.dir_z)
-        df_nu = df_nu[mask_nu].copy()
-        mask_nubar = get_cut_mask(df_nubar.bdt0, df_nubar.bdt1, df_nubar.dir_z)
-        df_nubar = df_nubar[mask_nubar].copy()
+        output: name of generated Aeff file with extension .fits
 
-    # calculate the normalized weight factor for each event
-    weights = dict()
-    for l, df in zip(['nu', 'nubar'], [df_nu, df_nubar]):
-        weights[l] = (df.energy_mc**(weight_factor - alpha_value)).to_numpy()
-        weights[l] *= len(df) / weights[l].sum()
+        """
+        theta_binE = np.arccos(cos_theta_binE)
+        # Bin centers
+        energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
+        theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
 
-    # Create DataFrames with neutrinos and anti-neutrinos
-    df_nu_all = pd.concat([df_nu, df_nubar], ignore_index=True)
+        # Fill histograms for effective area
+        # !!! Check number of events uproot vs pandas
+        aeff_all = (
+            aeff_2D(
+                e_bins=energy_binE,
+                t_bins=theta_binE,
+                dataset=df_pass,
+                gamma=(-weight_factor),
+                nevents=df_pass.shape[0],
+            )
+            * 2
+        )  # two building blocks
 
-    # Also create a concatenated array for the weights
-    weights_all = np.concatenate([weights['nu'], weights['nubar']])
+        new_aeff_file = WriteAeff(
+            energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist=aeff_all
+        )
+        new_aeff_file.to_fits(file_name=output)
 
-    # Define bins for Aeff
-    # cos_bins_fine = np.linspace(1, -1, 13)
-    theta_binE = np.arccos(cos_theta_binE)
-    # energy_binE = np.logspace(2, 8, 49)
+        return None
 
-    # Bin centers
-    energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
-    theta_binC = np.arccos(0.5*(cos_theta_binE[:-1] + cos_theta_binE[1:]))
-
-    # Fill histograms for effective area
-    aeff_all = aeff_2D(
-        e_bins  = energy_binE,
-        t_bins  = theta_binE,
-        dataset = df_nu_all,
-        gamma   = (-weight_factor),
-        nevents = f_nu_km3io.header.genvol.numberOfEvents + f_nubar_km3io.header.genvol.numberOfEvents
-    ) * 2 # two building blocks
-
-    new_aeff_file = WriteAeff(energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist=aeff_all)
-    new_aeff_file.to_fits(file_name=output)
 
 def unpack_data(no_bdt, type, km3io_file, uproot_file):
     """
-    retrieve information from data and pack it to DataFrame
+    retrieve information from data and pack it to pandas DataFrame
 
     type: "nu" or "nubar"
 
     km3io_file: input km3io file
 
-    uproot_file: input uproot file 
+    uproot_file: input uproot file
 
     return pandas data frame for specific type
+
     """
     # Access data arrays
     data_km3io = dict()
@@ -157,9 +153,9 @@ def unpack_data(no_bdt, type, km3io_file, uproot_file):
 
     return df_data
 
+
 def get_cut_mask(bdt0, bdt1, dir_z):
     """
-    
     bdt0: to determine groups to which BDT cut should be applied (upgoing/horizontal/downgoing)
 
     bdt1: BDT score in the range [-1, 1]. Closer to 1 means more signal-like
@@ -167,44 +163,77 @@ def get_cut_mask(bdt0, bdt1, dir_z):
     dir_z: is the reconstructed z-direction of the event
 
     return a mask for set cuts
+
     """
 
     mask_down = bdt0 >= 11  # remove downgoing events
-    clear_signal = bdt0 == 12 # very clear signal
-    loose_up = (np.arccos(dir_z)*180/np.pi < 80) & (bdt1 > 0.) # apply loose cut on upgoing events
-    strong_horizontal = (np.arccos(dir_z)*180/np.pi > 80) & (bdt1 > 0.7) # apply strong cut on horizontal events
-    
-    return mask_down & ( clear_signal | loose_up | strong_horizontal )
+    clear_signal = bdt0 == 12  # very clear signal
+    loose_up = (np.arccos(dir_z) * 180 / np.pi < 80) & (
+        bdt1 > 0.0
+    )  # apply loose cut on upgoing events
+    strong_horizontal = (np.arccos(dir_z) * 180 / np.pi > 80) & (
+        bdt1 > 0.7
+    )  # apply strong cut on horizontal events
+
+    return mask_down & (clear_signal | loose_up | strong_horizontal)
+
 
 # Class for writing aeff_2D to fits files
 class WriteAeff:
-
     def __init__(self, energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist):
-        self.col1 = fits.Column(name='ENERG_LO', format='{}E'.format(len(energy_binC)), unit='GeV', array=[energy_binE[:-1]])
-        self.col2 = fits.Column(name='ENERG_HI', format='{}E'.format(len(energy_binC)), unit='GeV', array=[energy_binE[1:]])
-        self.col3 = fits.Column(name='THETA_LO', format='{}E'.format(len(theta_binC)), unit='rad', array=[theta_binE[:-1]])
-        self.col4 = fits.Column(name='THETA_HI', format='{}E'.format(len(theta_binC)), unit='rad', array=[theta_binE[1:]])
-        self.col5 = fits.Column(name='EFFAREA', format='{}D'.format(len(energy_binC)*len(theta_binC)),
-                        dim='({},{})'.format(len(energy_binC), len(theta_binC)), unit='m2', array=[aeff_hist])
+        self.col1 = fits.Column(
+            name="ENERG_LO",
+            format="{}E".format(len(energy_binC)),
+            unit="GeV",
+            array=[energy_binE[:-1]],
+        )
+        self.col2 = fits.Column(
+            name="ENERG_HI",
+            format="{}E".format(len(energy_binC)),
+            unit="GeV",
+            array=[energy_binE[1:]],
+        )
+        self.col3 = fits.Column(
+            name="THETA_LO",
+            format="{}E".format(len(theta_binC)),
+            unit="rad",
+            array=[theta_binE[:-1]],
+        )
+        self.col4 = fits.Column(
+            name="THETA_HI",
+            format="{}E".format(len(theta_binC)),
+            unit="rad",
+            array=[theta_binE[1:]],
+        )
+        self.col5 = fits.Column(
+            name="EFFAREA",
+            format="{}D".format(len(energy_binC) * len(theta_binC)),
+            dim="({},{})".format(len(energy_binC), len(theta_binC)),
+            unit="m2",
+            array=[aeff_hist],
+        )
 
     def to_fits(self, file_name):
-        """ 
-        write .fits file
+        """
+        write Aeff to .fits file
 
         file_name: should have .fits extension
+
         """
         cols = fits.ColDefs([self.col1, self.col2, self.col3, self.col4, self.col5])
         hdu = fits.PrimaryHDU()
         hdu2 = fits.BinTableHDU.from_columns(cols)
-        hdu2.header['EXTNAME'] = 'EFFECTIVE AREA'
-        hdu2.header['HDUDOC'] = 'https://github.com/open-gamma-ray-astro/gamma-astro-data-formats'
-        hdu2.header['HDUVERS'] = '0.2'
-        hdu2.header['HDUCLASS'] = 'GADF'
-        hdu2.header['HDUCLAS1'] = 'RESPONSE'
-        hdu2.header['HDUCLAS2'] = 'EFF_AREA'
-        hdu2.header['HDUCLAS3'] = 'FULL-ENCLOSURE'
-        hdu2.header['HDUCLAS4'] = 'AEFF_2D'
+        hdu2.header["EXTNAME"] = "EFFECTIVE AREA"
+        hdu2.header[
+            "HDUDOC"
+        ] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+        hdu2.header["HDUVERS"] = "0.2"
+        hdu2.header["HDUCLASS"] = "GADF"
+        hdu2.header["HDUCLAS1"] = "RESPONSE"
+        hdu2.header["HDUCLAS2"] = "EFF_AREA"
+        hdu2.header["HDUCLAS3"] = "FULL-ENCLOSURE"
+        hdu2.header["HDUCLAS4"] = "AEFF_2D"
         aeff_fits = fits.HDUList([hdu, hdu2])
         aeff_fits.writeto(file_name, overwrite=True)
 
-        return print(f'file {file_name} is written successfully!')
+        return print(f"file {file_name} is written successfully!")
