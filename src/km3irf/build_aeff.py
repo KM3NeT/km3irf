@@ -27,7 +27,7 @@ from scipy.stats import binned_statistic
 # from python_scripts.func import WritePSF
 
 
-class BuildAeff:
+class DataContainer:
     def __init__(self, infile, tag, no_bdt=False):
         self.f_km3io = OfflineReader(infile)
         self.f_uproot = ur.open(infile)
@@ -44,6 +44,23 @@ class BuildAeff:
         # df_cut = self.df[mask].copy()
         # return df_cut
 
+    def weight_calc(self, tag, df_pass, weight_factor=-2.5):
+        """
+        calculate the normalized weight factor for each event
+
+        tag: "nu" or "nubar"
+
+        df_pass: incoming data frame
+
+        weight_factor: re-weight data, default value  -2.5
+
+        """
+        alpha_value = self.f_km3io.header.spectrum.alpha
+        weights = dict()
+        weights[tag] = (df_pass.energy_mc**(weight_factor - alpha_value)).to_numpy()
+        weights[tag] *= len(df_pass) / weights[tag].sum() 
+        return weights
+
     def merge_flavors(self, df_nu, df_nubar):
         """
         Merge two data frames with differnt flavors in one
@@ -58,7 +75,7 @@ class BuildAeff:
         df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
         return df_merged
 
-    def build(
+    def build_aeff(
         self,
         df_pass,
         weight_factor=-2.5,
