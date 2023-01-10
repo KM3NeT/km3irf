@@ -4,6 +4,7 @@ import numpy as np
 import awkward as ak
 import pandas as pd
 import uproot as ur
+
 from km3io import OfflineReader
 from .irf_tools import aeff_2D
 
@@ -28,10 +29,10 @@ from scipy.stats import binned_statistic
 
 
 class DataContainer:
-    def __init__(self, infile, tag, no_bdt=False):
+    def __init__(self, infile, no_bdt=False):
         self.f_km3io = OfflineReader(infile)
         self.f_uproot = ur.open(infile)
-        self.df = unpack_data(no_bdt, tag, self.f_km3io, self.f_uproot)
+        self.df = unpack_data(no_bdt, self.f_uproot)
 
     def apply_cuts(self):
         """
@@ -57,8 +58,8 @@ class DataContainer:
         """
         alpha_value = self.f_km3io.header.spectrum.alpha
         weights = dict()
-        weights[tag] = (df_pass.energy_mc**(weight_factor - alpha_value)).to_numpy()
-        weights[tag] *= len(df_pass) / weights[tag].sum() 
+        weights[tag] = (df_pass.E_mc ** (weight_factor - alpha_value)).to_numpy()
+        weights[tag] *= len(df_pass) / weights[tag].sum()
         return weights
 
     def merge_flavors(self, df_nu, df_nubar):
@@ -123,50 +124,40 @@ class DataContainer:
         return None
 
 
-def unpack_data(no_bdt, type, km3io_file, uproot_file):
+def unpack_data(no_bdt, uproot_file):
     """
     retrieve information from data and pack it to pandas DataFrame
 
-    type: "nu" or "nubar"
-
-    km3io_file: input km3io file
-
     uproot_file: input uproot file
 
-    return pandas data frame for specific type
+    return pandas data frame
 
     """
     # Access data arrays
-    data_km3io = dict()
+    data_uproot = dict()
 
-    # for l, f in zip(["nu", "nubar"], [f_nu_km3io, f_nubar_km3io]):
-    data_km3io[type] = dict()
+    E_evt = uproot_file["E/Evt"]
 
-    data_km3io[type]["E"] = km3io_file.tracks.E[:, 0]
-    data_km3io[type]["dir_x"] = km3io_file.tracks.dir_x[:, 0]
-    data_km3io[type]["dir_y"] = km3io_file.tracks.dir_y[:, 0]
-    data_km3io[type]["dir_z"] = km3io_file.tracks.dir_z[:, 0]
+    data_uproot["E"] = E_evt["trks/trks.E"].array()[:, 0]
+    data_uproot["dir_x"] = E_evt["trks/trks.dir.x"].array()[:, 0]
+    data_uproot["dir_y"] = E_evt["trks/trks.dir.y"].array()[:, 0]
+    data_uproot["dir_z"] = E_evt["trks/trks.dir.z"].array()[:, 0]
 
-    data_km3io[type]["energy_mc"] = km3io_file.mc_tracks.E[:, 0]
-    data_km3io[type]["dir_x_mc"] = km3io_file.mc_tracks.dir_x[:, 0]
-    data_km3io[type]["dir_y_mc"] = km3io_file.mc_tracks.dir_y[:, 0]
-    data_km3io[type]["dir_z_mc"] = km3io_file.mc_tracks.dir_z[:, 0]
-
-    data_km3io[type]["weight_w2"] = km3io_file.w[:, 1]
+    data_uproot["E_mc"] = E_evt["mc_trks/mc_trks.E"].array()[:, 0]
+    data_uproot["dir_x_mc"] = E_evt["mc_trks/mc_trks.dir.x"].array()[:, 0]
+    data_uproot["dir_y_mc"] = E_evt["mc_trks/mc_trks.dir.y"].array()[:, 0]
+    data_uproot["dir_z_mc"] = E_evt["mc_trks/mc_trks.dir.z"].array()[:, 0]
+    data_uproot["weight_w2"] = E_evt["w"].array()[:, 1]
 
     # extracting bdt information
     if not no_bdt:
-        # for l, f in zip(["nu", "nubar"], [f_nu_uproot, f_nubar_uproot]):
-        T = uproot_file["T;1"]
+        T = uproot_file["T"]
         bdt = T["bdt"].array()
-        data_km3io[type]["bdt0"] = bdt[:, 0]
-        data_km3io[type]["bdt1"] = bdt[:, 1]
+        data_uproot["bdt0"] = bdt[:, 0]
+        data_uproot["bdt1"] = bdt[:, 1]
 
     # create Data Frames
-    df_data = pd.DataFrame(data_km3io[type])
-    # df_nubar = pd.DataFrame(data_km3io["nubar"])
-
-    # data_tuple = (df_nu, df_nubar)
+    df_data = pd.DataFrame(data_uproot)
 
     return df_data
 
