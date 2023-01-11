@@ -9,6 +9,7 @@ from os.path import getsize
 from prettytable import PrettyTable
 from importlib_resources import files
 
+
 data_dir = path.join(path.dirname(__file__), "data")
 
 
@@ -24,7 +25,7 @@ def merge_fits(
     psf_fits=path.join(data_dir, "psf.fits"),
     edisp_fits=path.join(data_dir, "edisp.fits"),
     bkg_fits=path.join(data_dir, "bkg_nu.fits"),
-    output_path= data_dir,
+    output_path=data_dir,
     output_file="all_in_one.fits",
 ):
     """
@@ -72,7 +73,7 @@ def merge_fits(
 
 def list_data(print_tab=False):
     """
-    Return dictionary with names and pathes in the data folder
+    Return dictionary of .fits files with names and pathes in the data folder
 
     print_tab: print a table with content, default False
     """
@@ -80,9 +81,11 @@ def list_data(print_tab=False):
     data_path = path.join(data_dir, "*.fits")
     info = {}
 
-    for file, i in zip(glob(data_path, recursive=True), listdir(data_dir)):
-        tab.add_row([file, round(getsize(filename=file) / float(1 << 10), 2)])
-        info.update({i: file})
+    clean_list = [i for i in listdir(data_dir) if ".fits" in i]
+    for file, i in zip(glob(data_path, recursive=True), clean_list):
+        if ".fits" in i:
+            tab.add_row([file, round(getsize(filename=file) / float(1 << 10), 2)])
+            info.update({i: file})
     # show something
     if print_tab:
         print(tab)

@@ -6,6 +6,7 @@ import astropy
 
 from km3irf import Calculator
 from km3irf.utils import merge_fits, list_data
+from km3irf import build_aeff
 
 
 class TestCalculator(unittest.TestCase):
@@ -49,3 +50,7 @@ class TestUtils(unittest.TestCase):
     def test_list_data(self):
         numb_fits = [i for i in listdir(self.test_path) if ".fits" in i]
         assert len(list_data()) == len(numb_fits)
+
+
+class TestBuild_IRF(unittest.TestCase):
+    pass
