@@ -64,4 +64,4 @@ class TestBuild_IRF(unittest.TestCase):
         df_test = build_aeff.unpack_data(
             no_bdt=True, uproot_file=ur.open(self.testdata)
         )
-        assert df_test.shape[0] == 10
+        assert (df_test.size == 110) | (df_test.size == 90)
