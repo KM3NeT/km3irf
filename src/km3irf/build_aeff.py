@@ -9,8 +9,8 @@ import uproot as ur
 from km3io import OfflineReader
 from .irf_tools import aeff_2D
 
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
+# import matplotlib.pyplot as plt
+# from matplotlib.colors import LogNorm
 
 from astropy.io import fits
 import astropy.units as u
