@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 import unittest
 from os import path, listdir, curdir, remove
-import astropy
+import uproot as ur
+
+# import astropy
 
 from km3irf import Calculator
 from km3irf.utils import merge_fits, list_data
@@ -53,4 +55,13 @@ class TestUtils(unittest.TestCase):
 
 
 class TestBuild_IRF(unittest.TestCase):
-    pass
+    def setUp(self):
+        self.testdata = path.join(
+            path.abspath(curdir), "src", "km3irf", "data", "test_10events.dst.root"
+        )
+
+    def test_unpack_data(self):
+        df_test = build_aeff.unpack_data(
+            no_bdt=True, uproot_file=ur.open(self.testdata)
+        )
+        assert df_test.shape[0] == 10
