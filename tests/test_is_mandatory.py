@@ -2,4 +2,4 @@
 
 
 def test_is_mandatory():
-    assert 2 == 5 - 3
+    assert "3" in "km3irf"

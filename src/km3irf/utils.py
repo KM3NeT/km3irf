@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from cmath import inf
-from .calc import Calculator
+
 from astropy.io import fits
 from os import path, listdir
 from glob import glob
@@ -11,13 +10,6 @@ from importlib_resources import files
 
 
 data_dir = path.join(path.dirname(__file__), "data")
-
-
-def print_multiplication_table(base):
-    """Prints the multiplication table for a given base"""
-    calculator = Calculator()
-    for i in range(1, 11):
-        print("{} x {} = {}".format(base, i, calculator.multiply(base, i)))
 
 
 def merge_fits(
