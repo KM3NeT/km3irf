@@ -59,16 +59,15 @@ class TestBuild_IRF(unittest.TestCase):
         self.testdata = path.join(
             path.abspath(curdir), "src", "km3irf", "data", "test_10events.dst.root"
         )
-        self.init_data = build_aeff.DataContainer(no_bdt=True, infile=self.testdata)
+        self.init_data = build_aeff.DataContainer(no_bdt=False, infile=self.testdata)
 
-    # only workss for dst with bdt
-    # def test_apply_cuts(self):
-    #     self.init_data.apply_cuts()
-    #     assert self.init_data.df.shape[0] != None
+    def test_apply_cuts(self):
+        self.init_data.apply_cuts()
+        assert self.init_data.df.shape[0] != None
 
     def test_unpack_data(self):
         df_test = build_aeff.unpack_data(
-            no_bdt=True, uproot_file=ur.open(self.testdata)
+            no_bdt=False, uproot_file=ur.open(self.testdata)
         )
         assert (df_test.size == 110) | (df_test.size == 90)
 
