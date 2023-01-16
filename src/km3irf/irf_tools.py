@@ -66,10 +66,10 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
     if "theta_mc" not in dataset.keys():
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
     if "migra" not in dataset.keys():
-        dataset["migra"] = dataset.E / dataset.energy_mc
+        dataset["migra"] = dataset.E / dataset.E_mc
 
     theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.energy_mc, e_bins, labels=False).to_numpy()
+    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
     migra_bins = pd.cut(dataset.migra, m_bins, labels=False).to_numpy()
 
     edisp = fill_edisp_3D(
@@ -132,7 +132,7 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
     dataset["rad"] = rad
 
     theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.energy_mc, e_bins, labels=False).to_numpy()
+    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
     rad_bins = pd.cut(rad, r_bins, labels=False).to_numpy()
 
     psf = fill_psf_3D(
@@ -180,10 +180,10 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
 
     theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.energy_mc, e_bins, labels=False).to_numpy()
+    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
 
     w2 = dataset.weight_w2.to_numpy()
-    E = dataset.energy_mc.to_numpy()
+    E = dataset.E_mc.to_numpy()
     aeff = fill_aeff_2D(e_bins, t_bins, energy_bins, theta_bins, w2, E, gamma, nevents)
 
     return aeff
