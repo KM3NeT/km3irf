@@ -124,99 +124,97 @@ class DataContainer:
 
         return None
 
+    def build_psf(
+        self,
+        df_pass,
+        cos_theta_binE=np.linspace(1, -1, 7),
+        energy_binE=np.logspace(2, 8, 25),
+        rad_binE=np.concatenate(
+            (
+                np.linspace(0, 1, 21),
+                np.linspace(1, 5, 41)[1:],
+                np.linspace(5, 30, 51)[1:],
+                [180.0],
+            )
+        ),
+        norm=False,
+        smooth=True,
+        smooth_norm=True,
+        output="psf.fits",
+    ):
+        """
+        Build Point Spread Function 3D .fits
 
-def build_psf(
-    self,
-    df_pass,
-    cos_theta_binE=np.linspace(1, -1, 7),
-    energy_binE=np.logspace(2, 8, 25),
-    rad_binE=np.concatenate(
-        (
-            np.linspace(0, 1, 21),
-            np.linspace(1, 5, 41)[1:],
-            np.linspace(5, 30, 51)[1:],
-            [180.0],
+        df_pass: incoming data frame
+
+        cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
+
+        energy_binE: log numpy array of enegy bins
+
+        rad_binE: numpy array oflinear radial bins
+        (20 bins for 0-1 deg, 40 bins for 1-5 deg, 50 bins for 5-30 deg, + 1 final bin up to 180 deg)
+
+        output: name of generated PSF file with extension .fits
+
+        """
+        theta_binE = np.arccos(cos_theta_binE)
+        # Bin centers
+        energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
+        theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
+        rad_binC = 0.5 * (rad_binE[1:] + rad_binE[:-1])
+
+        # Fill histogram for PSF
+        psf = psf_3D(
+            e_bins=energy_binE,
+            r_bins=rad_binE,
+            t_bins=theta_binE,
+            dataset=df_pass,
+            weights=1,
         )
-    ),
-    norm=False,
-    smooth=True,
-    smooth_norm=True,
-    output="psf.fits",
-):
-    """
-    Build Point Spread Function 3D .fits
 
-    df_pass: incoming data frame
+        # compute dP/dOmega
+        sizes_rad_bins = np.diff(rad_binE**2)
+        norma = psf.sum(axis=0, keepdims=True)
+        psf /= sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
 
-    cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
+        # Normalization for PSF
+        if norm:
+            psf = np.nan_to_num(psf / norma)
 
-    energy_binE: log numpy array of enegy bins
+        # Smearing
+        if smooth and not norm:
+            s1 = gaussian_filter1d(psf, 0.5, axis=0, mode="nearest")
+            s2 = gaussian_filter1d(psf, 2, axis=0, mode="nearest")
+            s3 = gaussian_filter1d(psf, 4, axis=0, mode="nearest")
+            s4 = gaussian_filter1d(psf, 6, axis=0, mode="constant")
+            psf = np.concatenate(
+                (s1[:10], s2[10:20], s3[20:60], s4[60:-1], [psf[-1]]), axis=0
+            )
+            # smooth edges between the different ranges
+            psf[10:-1] = gaussian_filter1d(psf[10:-1], 1, axis=0, mode="nearest")
+            if smooth_norm:
+                norm_psf_sm = (
+                    psf * sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
+                ).sum(axis=0, keepdims=True)
+                psf = np.nan_to_num(psf / norm_psf_sm)
+        elif smooth and norm:
+            raise Exception("smooth and norm cannot be True at the same time")
 
-    rad_binE: numpy array oflinear radial bins
-    (20 bins for 0-1 deg, 40 bins for 1-5 deg, 50 bins for 5-30 deg, + 1 final bin up to 180 deg)
-
-    output: name of generated PSF file with extension .fits
-
-    """
-    theta_binE = np.arccos(cos_theta_binE)
-    # Bin centers
-    energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
-    theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
-    rad_binC = 0.5 * (rad_binE[1:] + rad_binE[:-1])
-
-    # Fill histogram for PSF
-    psf = psf_3D(
-        e_bins=energy_binE,
-        r_bins=rad_binE,
-        t_bins=theta_binE,
-        dataset=df_pass,
-        weights=1,
-    )
-
-    # compute dP/dOmega
-    sizes_rad_bins = np.diff(rad_binE**2)
-    norma = psf.sum(axis=0, keepdims=True)
-    psf /= sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
-
-    # Normalization for PSF
-    if norm:
-        psf = np.nan_to_num(psf / norma)
-
-    # Smearing
-    if smooth and not norm:
-        s1 = gaussian_filter1d(psf, 0.5, axis=0, mode="nearest")
-        s2 = gaussian_filter1d(psf, 2, axis=0, mode="nearest")
-        s3 = gaussian_filter1d(psf, 4, axis=0, mode="nearest")
-        s4 = gaussian_filter1d(psf, 6, axis=0, mode="constant")
-        psf = np.concatenate(
-            (s1[:10], s2[10:20], s3[20:60], s4[60:-1], [psf[-1]]), axis=0
+        new_psf_file = WritePSF(
+            energy_binC,
+            energy_binE,
+            theta_binC,
+            theta_binE,
+            rad_binC,
+            rad_binE,
+            psf_T=psf,
         )
-        # smooth edges between the different ranges
-        psf[10:-1] = gaussian_filter1d(psf[10:-1], 1, axis=0, mode="nearest")
-        if smooth_norm:
-            norm_psf_sm = (
-                psf * sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
-            ).sum(axis=0, keepdims=True)
-            psf = np.nan_to_num(psf / norm_psf_sm)
-    elif smooth and norm:
-        raise Exception("smooth and norm cannot be True at the same time")
+        new_psf_file.to_fits(file_name=output)
 
-    new_psf_file = WritePSF(
-        energy_binC,
-        energy_binE,
-        theta_binC,
-        theta_binE,
-        rad_binC,
-        rad_binE,
-        psf_T=psf,
-    )
-    new_psf_file.to_fits(file_name=output)
+        return None
 
-    return None
-
-
-def build_edisp():
-    pass
+    def build_edisp():
+        pass
 
 
 def unpack_data(no_bdt, uproot_file):
