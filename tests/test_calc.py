@@ -4,7 +4,6 @@ import unittest
 from os import path, listdir, curdir, remove
 import uproot as ur
 from astropy.io import fits
-import tracemalloc
 
 from km3irf import Calculator
 from km3irf.utils import merge_fits, list_data
@@ -80,3 +79,15 @@ class TestBuild_IRF(unittest.TestCase):
         assert "aeff.fits" in listdir(path.abspath(curdir))
         assert size_of != 0
         assert header_fits == "EFFECTIVE AREA"
+        remove(path.join(path.abspath(curdir), "aeff.fits"))
+
+    def test_buid_psf(self):
+        self.init_data.build_psf(df_pass=self.init_data.df)
+        size_of = path.getsize(path.join(path.abspath(curdir), "psf.fits"))
+        with fits.open(path.join(path.abspath(curdir), "psf.fits")) as file_fits:
+            global header_fits
+            header_fits = file_fits[1].header["EXTNAME"]
+        assert "psf.fits" in listdir(path.abspath(curdir))
+        assert size_of != 0
+        assert header_fits == "PSF_2D_TABLE"
+        remove(path.join(path.abspath(curdir), "psf.fits"))
