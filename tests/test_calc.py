@@ -91,3 +91,7 @@ class TestBuild_IRF(unittest.TestCase):
         assert size_of != 0
         assert header_fits == "PSF_2D_TABLE"
         remove(path.join(path.abspath(curdir), "psf.fits"))
+
+
+if __name__ == "__main__":
+    unittest.main()
