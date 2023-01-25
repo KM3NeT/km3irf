@@ -10,8 +10,8 @@ cache:
     - .cache/pip
 
 stages:
-  - test
   - code-style
+  - test
   - coverage
   - doc
   - release
@@ -73,7 +73,7 @@ test-py3.10:
 
 black:
     image: docker.km3net.de/base/python:3.9
-    stage: test
+    stage: code-style
     script:
         - *virtualenv_definition
         - make black-diff
