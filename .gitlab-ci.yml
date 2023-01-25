@@ -10,6 +10,7 @@ cache:
     - .cache/pip
 
 stages:
+  - code-style
   - test
   - coverage
   - doc
@@ -70,11 +71,12 @@ test-py3.10:
         - make test
     <<: *junit_definition
 
-code-style:
+black:
     image: docker.km3net.de/base/python:3.9
-    stage: test
+    stage: code-style
     script:
         - *virtualenv_definition
+        - make black-diff
         - make black-check
     allow_failure: true
 

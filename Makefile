@@ -44,6 +44,16 @@ black-check:
 	black --check tests
 	black --check doc/conf.py
 	black --check setup.py
+	black --check use_cases
+
+.PHONY: black-diff
+black-diff:
+	black --diff --color --exclude 'version.py' src/km3irf
+	black --diff --color examples
+	black --diff --color tests
+	black --diff --color doc/conf.py
+	black --diff --color setup.py
+	black --diff --color use_cases
 
 
-.PHONY: all clean install install-dev test  test-nocov flake8 pep8 docstyle black black-check
+.PHONY: all clean install install-dev test  test-nocov flake8 pep8 docstyle black black-check black-diff
