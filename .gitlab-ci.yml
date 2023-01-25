@@ -76,6 +76,7 @@ code-style:
     script:
         - *virtualenv_definition
         - make black-check
+        - make black-diff
     allow_failure: true
 
 coverage:
