@@ -7,7 +7,7 @@ import pandas as pd
 import uproot as ur
 
 from km3io import OfflineReader
-from .irf_tools import aeff_2D, psf_3D
+from .irf_tools import aeff_2D, psf_3D, edisp_3D
 
 # import matplotlib.pyplot as plt
 # from matplotlib.colors import LogNorm
@@ -118,7 +118,7 @@ class DataContainer:
         )  # two building blocks
 
         new_aeff_file = WriteAeff(
-            energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist=aeff_all
+            energy_binC, energy_binE, theta_binC, theta_binE, aeff_T=aeff_all
         )
         new_aeff_file.to_fits(file_name=output)
 
@@ -151,8 +151,14 @@ class DataContainer:
 
         energy_binE: log numpy array of enegy bins
 
-        rad_binE: numpy array oflinear radial bins
+        rad_binE: numpy array of linear radial bins
         (20 bins for 0-1 deg, 40 bins for 1-5 deg, 50 bins for 5-30 deg, + 1 final bin up to 180 deg)
+
+        norm: enable or disable normalization, default False
+
+        smooth: enable or disable smearing, default True
+
+        smooth_norm: enable or disable smearing with normalization, can't be the same with norm, default True
 
         output: name of generated PSF file with extension .fits
 
@@ -173,13 +179,12 @@ class DataContainer:
         )
 
         # compute dP/dOmega
-        sizes_rad_bins = np.diff(rad_binE**2)
-        norma = psf.sum(axis=0, keepdims=True)
-        psf /= sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
+        sizes_rad_binE = np.diff(rad_binE**2)
+        psf /= sizes_rad_binE[:, None, None] * (np.pi / 180) ** 2 * np.pi
 
         # Normalization for PSF
         if norm:
-            psf = np.nan_to_num(psf / norma)
+            psf = np.nan_to_num(psf / psf.sum(axis=0, keepdims=True))
 
         # Smearing
         if smooth and not norm:
@@ -194,7 +199,7 @@ class DataContainer:
             psf[10:-1] = gaussian_filter1d(psf[10:-1], 1, axis=0, mode="nearest")
             if smooth_norm:
                 norm_psf_sm = (
-                    psf * sizes_rad_bins[:, None, None] * (np.pi / 180) ** 2 * np.pi
+                    psf * sizes_rad_binE[:, None, None] * (np.pi / 180) ** 2 * np.pi
                 ).sum(axis=0, keepdims=True)
                 psf = np.nan_to_num(psf / norm_psf_sm)
         elif smooth and norm:
@@ -213,8 +218,73 @@ class DataContainer:
 
         return None
 
-    def build_edisp():
-        pass
+    def build_edisp(
+        self,
+        df_pass,
+        cos_theta_binE=np.linspace(1, -1, 7),
+        energy_binE=np.logspace(2, 8, 25),
+        migra_binE=np.logspace(-5, 2, 57),
+        norm=False,
+        smooth=True,
+        smooth_norm=True,
+        output="edisp.fits",
+    ):
+        """
+        Build Energy dispertion 3D .fits
+
+        """
+        theta_binE = np.arccos(cos_theta_binE)
+        # Bin centers
+        energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
+        theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
+        migra_binC = np.sqrt(migra_binE[:-1] * migra_binE[1:])
+
+        # fill histogram for Edisp
+        edisp = edisp_3D(
+            e_bins=energy_binE,
+            m_bins=migra_binE,
+            t_bins=theta_binE,
+            dataset=df_pass,
+            weights=1,
+        )
+
+        sizes_migra_binE = np.diff(migra_binE)
+        edisp /= sizes_migra_binE[:, np.newaxis]
+        m_normed = edisp * sizes_migra_binE[:, np.newaxis]
+
+        if norm:
+            edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
+
+        # Smearing
+        if smooth and not norm:
+            for i in range(edisp.shape[-1]):
+                for j in range(edisp.shape[0]):
+                    kernel_size = 2 - 0.25 * max(0, np.log10(edisp[j, :, i].sum()))
+                    edisp[j, :, i] = gaussian_filter1d(
+                        edisp[j, :, i] * sizes_migra_binE,
+                        kernel_size,
+                        axis=0,
+                        mode="nearest",
+                    )
+            edisp /= sizes_migra_binE[:, None]
+            if smooth_norm:
+                m_normed = edisp * sizes_migra_binE[:, np.newaxis]
+                edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
+        elif smooth and norm:
+            raise Exception("smooth and norm cannot be True at the same time")
+
+        new_edisp_file = WritePSF(
+            energy_binC,
+            energy_binE,
+            theta_binC,
+            theta_binE,
+            migra_binC,
+            migra_binE,
+            edisp_T=edisp,
+        )
+        new_edisp_file.to_fits(file_name=output)
+
+        return None
 
 
 def unpack_data(no_bdt, uproot_file):
@@ -281,7 +351,7 @@ def get_cut_mask(bdt0, bdt1, dir_z):
 
 # Class for writing aeff_2D to fits files
 class WriteAeff:
-    def __init__(self, energy_binC, energy_binE, theta_binC, theta_binE, aeff_hist):
+    def __init__(self, energy_binC, energy_binE, theta_binC, theta_binE, aeff_T):
         self.col1 = fits.Column(
             name="ENERG_LO",
             format="{}E".format(len(energy_binC)),
@@ -311,7 +381,7 @@ class WriteAeff:
             format="{}D".format(len(energy_binC) * len(theta_binC)),
             dim="({},{})".format(len(energy_binC), len(theta_binC)),
             unit="m2",
-            array=[aeff_hist],
+            array=[aeff_T],
         )
 
     def to_fits(self, file_name):
@@ -422,5 +492,92 @@ class WritePSF:
         hdu2.header["HDUCLAS4"] = "PSF_TABLE"
         psf_fits = fits.HDUList([hdu, hdu2])
         psf_fits.writeto(file_name, overwrite=True)
+
+        return print(f"file {file_name} is written successfully!")
+
+
+# Class for writing Edisp to fits files
+class WriteEdisp:
+    def __init__(
+        self,
+        e_binc_coarse,
+        e_bins_coarse,
+        t_binc_coarse,
+        t_bins_coarse,
+        migra_binc,
+        migra_bins,
+        edisp_T,
+    ):
+        self.col1 = fits.Column(
+            name="ENERG_LO",
+            format="{}E".format(len(e_binc_coarse)),
+            unit="GeV",
+            array=[e_bins_coarse[:-1]],
+        )
+        self.col2 = fits.Column(
+            name="ENERG_HI",
+            format="{}E".format(len(e_binc_coarse)),
+            unit="GeV",
+            array=[e_bins_coarse[1:]],
+        )
+        self.col3 = fits.Column(
+            name="MIGRA_LO",
+            format="{}E".format(len(migra_binc)),
+            array=[migra_bins[:-1]],
+        )
+        self.col4 = fits.Column(
+            name="MIGRA_HI",
+            format="{}E".format(len(migra_binc)),
+            array=[migra_bins[1:]],
+        )
+        self.col5 = fits.Column(
+            name="THETA_LO",
+            format="{}E".format(len(t_binc_coarse)),
+            unit="rad",
+            array=[t_bins_coarse[:-1]],
+        )
+        self.col6 = fits.Column(
+            name="THETA_HI",
+            format="{}E".format(len(t_binc_coarse)),
+            unit="rad",
+            array=[t_bins_coarse[1:]],
+        )
+        self.col7 = fits.Column(
+            name="MATRIX",
+            format="{}D".format(
+                len(e_binc_coarse) * len(migra_binc) * len(t_binc_coarse)
+            ),
+            dim="({},{},{})".format(
+                len(e_binc_coarse), len(migra_binc), len(t_binc_coarse)
+            ),
+            array=[edisp_T * np.diff(migra_bins)[:, None]],
+        )
+
+    def to_fits(self, file_name):
+        cols = fits.ColDefs(
+            [
+                self.col1,
+                self.col2,
+                self.col3,
+                self.col4,
+                self.col5,
+                self.col6,
+                self.col7,
+            ]
+        )
+        hdu = fits.PrimaryHDU()
+        hdu2 = fits.BinTableHDU.from_columns(cols)
+        hdu2.header["EXTNAME"] = "EDISP_2D"
+        hdu2.header[
+            "HDUDOC"
+        ] = "https://github.com/open-gamma-ray-astro/gamma-astro-data-formats"
+        hdu2.header["HDUVERS"] = "0.2"
+        hdu2.header["HDUCLASS"] = "GADF"
+        hdu2.header["HDUCLAS1"] = "RESPONSE"
+        hdu2.header["HDUCLAS2"] = "EDISP"
+        hdu2.header["HDUCLAS3"] = "FULL-ENCLOSURE"
+        hdu2.header["HDUCLAS4"] = "EDISP_2D"
+        edisp_fits = fits.HDUList([hdu, hdu2])
+        edisp_fits.writeto(file_name, overwrite=True)
 
         return print(f"file {file_name} is written successfully!")
