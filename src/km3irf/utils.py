@@ -62,6 +62,8 @@ def merge_fits(
     file_edisp.close()
     file_bkg.close()
 
+    return print(f"combined IRF file {output_file} is written successfully!")
+
 
 def list_data(print_tab=False):
     """
