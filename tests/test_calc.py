@@ -4,10 +4,11 @@ import unittest
 from os import path, listdir, curdir, remove
 import uproot as ur
 from astropy.io import fits
+from km3net_testdata import data_path
 
 from km3irf import Calculator
 from km3irf.utils import merge_fits, list_data
-from km3irf import build_aeff
+from km3irf import build_irf
 
 
 class TestCalculator(unittest.TestCase):
@@ -55,17 +56,18 @@ class TestUtils(unittest.TestCase):
 
 class TestBuild_IRF(unittest.TestCase):
     def setUp(self):
-        self.testdata = path.join(
-            path.abspath(curdir), "src", "km3irf", "data", "test_10events.dst.root"
-        )
-        self.init_data = build_aeff.DataContainer(no_bdt=False, infile=self.testdata)
+        # self.testdata = path.join(
+        #     path.abspath(curdir), "src", "km3irf", "data", "test_10events.dst.root"
+        # )
+        self.testdata = data_path("dst/mcv5.1.km3_numuCC.ALL.dst.bdt.10events.root")
+        self.init_data = build_irf.DataContainer(no_bdt=False, infile=self.testdata)
 
     def test_apply_cuts(self):
         self.init_data.apply_cuts()
         assert self.init_data.df.shape[0] != None
 
     def test_unpack_data(self):
-        df_test = build_aeff.unpack_data(
+        df_test = build_irf.unpack_data(
             no_bdt=False, uproot_file=ur.open(self.testdata)
         )
         assert (df_test.size == 110) | (df_test.size == 90)
@@ -91,6 +93,18 @@ class TestBuild_IRF(unittest.TestCase):
         assert size_of != 0
         assert header_fits == "PSF_2D_TABLE"
         remove(path.join(path.abspath(curdir), "psf.fits"))
+
+    def test_buid_edisp(self):
+        self.init_data.build_edisp(df_pass=self.init_data.df)
+        self.file_name = "edisp.fits"
+        size_of = path.getsize(path.join(path.abspath(curdir), self.file_name))
+        with fits.open(path.join(path.abspath(curdir), self.file_name)) as file_fits:
+            global header_fits
+            header_fits = file_fits[1].header["EXTNAME"]
+        assert self.file_name in listdir(path.abspath(curdir))
+        assert size_of != 0
+        assert header_fits == "EDISP_2D"
+        remove(path.join(path.abspath(curdir), self.file_name))
 
 
 if __name__ == "__main__":

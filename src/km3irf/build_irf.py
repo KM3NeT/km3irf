@@ -273,7 +273,7 @@ class DataContainer:
         elif smooth and norm:
             raise Exception("smooth and norm cannot be True at the same time")
 
-        new_edisp_file = WritePSF(
+        new_edisp_file = WriteEdisp(
             energy_binC,
             energy_binE,
             theta_binC,
