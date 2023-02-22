@@ -131,9 +131,9 @@ class DataContainer:
         energy_binE=np.logspace(2, 8, 25),
         rad_binE=np.concatenate(
             (
-                np.linspace(0, 1, 21),
-                np.linspace(1, 5, 41)[1:],
-                np.linspace(5, 30, 51)[1:],
+                np.linspace(0, 1, 20, endpoint=False),
+                np.linspace(1, 5, 40, endpoint=False),
+                np.linspace(5, 30, 51),
                 [180.0],
             )
         ),
@@ -291,9 +291,10 @@ def unpack_data(no_bdt, uproot_file):
     """
     retrieve information from data and pack it to pandas DataFrame
 
-    uproot_file: input uproot file
-
-    return pandas data frame
+    :param uproot_file: input uproot file
+    :type: opened file with uproot
+    :return: pandas data frame
+    :rtype: pd.DataFrame
 
     """
     # Access data arrays

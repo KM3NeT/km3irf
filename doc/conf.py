@@ -16,7 +16,8 @@
 import sys
 import os
 from datetime import date
-import sphinx_rtd_theme
+
+# import sphinx_rtd_theme
 from pkg_resources import get_distribution
 
 # -- Project information -----------------------------------------------------
@@ -24,8 +25,8 @@ from pkg_resources import get_distribution
 version = get_distribution("km3irf").version
 short_version = ".".join(version.split(".")[:2])
 project = "km3irf {}".format(short_version)
-copyright = "{0}, Tamas Gal".format(date.today().year)
-author = "Tamas Gal"
+copyright = "{0}, Tamas Gal and Mikhail Smirnov".format(date.today().year)
+author = "Tamas Gal, Mikhail Smirnov"
 
 # -- General configuration ---------------------------------------------------
 
@@ -34,11 +35,11 @@ author = "Tamas Gal"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
+    "sphinx.ext.duration",
     "sphinx.ext.viewcode",
     "autoapi.extension",
     "numpydoc",
-    "sphinx_gallery.gen_gallery",
+    # "sphinx_gallery.gen_gallery",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -56,23 +57,42 @@ autoapi_options = ["members", "undoc-members", "show-module-summary"]
 autoapi_include_summaries = True
 
 # Gallery
-sphinx_gallery_conf = {
-    "backreferences_dir": "gen_modules",
-    "default_thumb_file": "_static/default_gallery_thumbnail.png",
-    "examples_dirs": "../examples",  # path to your example scripts
-    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-}
+# sphinx_gallery_conf = {
+#     "backreferences_dir": "gen_modules",
+#     "default_thumb_file": "_static/default_gallery_thumbnail.png",
+#     "examples_dirs": "../examples",  # path to your example scripts
+#     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+# }
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme = "sphinx_rtd_theme"
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_title = "km3irf {}".format(version)
+
+# Specify icons from pydata_sphinx_theme
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitLab",
+            "url": "https://git.km3net.de/km3py/km3irf",
+            "icon": "fa-brands fa-gitlab",
+            "type": "fontawesome",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/km3irf",
+            "icon": "fa-solid fa-box",
+            "type": "fontawesome",
+        },
+    ],
+}
