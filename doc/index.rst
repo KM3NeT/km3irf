@@ -1,23 +1,27 @@
-.. include:: ../README.rst
+Welcome to km3irf's documentation!
+===================================
 
+.. note::
+
+   This project is under active development.
+
+Contents
+--------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    examples
-   contribute
    changelog
 
    autoapi/index
 
    Code Coverage <http://km3py.pages.km3net.de/km3irf/coverage>
-   Source (Git) <https://git.km3net.de/km3py/km3irf>
 
-
+.. include:: ../README.rst
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -19,8 +19,6 @@ def calc_theta(table, mc=True):
     mc: wether to use the MonteCarlo (true) or the reconstructed directions (false).
         The true directions need to have a "_mc" appended to the directions
 
-    -----
-
     Returns: Array of zenith angles in rad
 
     """
@@ -57,8 +55,6 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
 
     weights: Array of weights for each event
 
-    ------
-
     Returns: 3-dimensional energy dispersion matrix. Binned in energy, energy migration and zenith angle
 
     """
@@ -85,6 +81,7 @@ def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, w
     numba accelerated helper function to fill the events into the energy disperaion matrix.
     Needed because numba does not work with pandas but needs numpy arrays.
     fastmath is disabled because it gives different results.
+
     """
 
     edisp = np.zeros((len(t_bins) - 1, len(m_bins) - 1, len(e_bins) - 1))
@@ -112,8 +109,6 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
     dataset: pandas.Dataframe with the events
 
     weights: Array of weights for each event
-
-    ------
 
     Returns: 3-dimensional PSF matrix. Binned in energy, zenith angle and radial bins
 
@@ -169,8 +164,6 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
     gamma: spectral index of simulated events
 
     nevents: number of generated events
-
-    ------
 
     Returns: 2D-Array with the effective area in m^2 binned in energy and zenith angle bins
 
