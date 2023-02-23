@@ -22,4 +22,4 @@ data_path = "/run/media/msmirnov/DATA2/data_files/IRF_data_create/mcv5.1.km3_num
 # --------------
 # Create BuildAeff object:
 
-test_irf = build_irf.DataContainer(data_path)
+# test_irf = build_irf.DataContainer(data_path)

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+A collection optional functions,
+which can be used for better functionality.
+
+"""
 
 from astropy.io import fits
 from os import path, listdir
@@ -20,20 +25,27 @@ def merge_fits(
     output_path=data_dir,
     output_file="all_in_one.fits",
 ):
-    """
+    r"""
     Merge separated fits files into one, which can be used in gammapy
 
-    aeff_fits: path to Aeff .fits file
+    Parameters
+    ----------
+    aeff_fits : str
+        path to Aeff .fits file
+    psf_fits : str
+        path  to PSF .fits file
+    edisp_fits : str
+        path to Edisp .fits file
+    bkg_fits : str
+        path to Background .fits file
+    output_path : str
+        path for the merged IRF file
+    output_file : str
+        name of the merged .fits file in data foledr of the package
 
-    psf_fits: path  to PSF .fits file
-
-    edisp_fits: path to Edisp .fits file
-
-    bkg_fits: path to Background .fits file
-
-    output_path: path for the merged IRF file
-
-    output_file: name of the merged .fits file in data foledr of the package
+    Returns
+    -------
+    None
     """
     hdu_list = []
     hdu_list.append(fits.PrimaryHDU())
@@ -62,7 +74,9 @@ def merge_fits(
     file_edisp.close()
     file_bkg.close()
 
-    return print(f"combined IRF file {output_file} is written successfully!")
+    print(f"combined IRF file {output_file} is merged successfully!")
+
+    return None
 
 
 def list_data(print_tab=False):
