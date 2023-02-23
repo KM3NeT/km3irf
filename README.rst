@@ -1,15 +1,23 @@
-KM3NeT instrument response functions
-====================================
-
-.. image:: https://git.km3net.de/km3py/km3irf/badges/master/pipeline.svg
+.. image:: https://git.km3net.de/km3py/km3irf/badges/main/pipeline.svg
     :target: https://git.km3net.de/km3py/km3irf/pipelines
 
-.. image:: https://git.km3net.de/km3py/km3irf/badges/master/coverage.svg
+.. image:: https://git.km3net.de/km3py/km3irf/badges/main/coverage.svg
     :target: https://km3py.pages.km3net.de/km3irf/coverage
 
 .. image:: https://git.km3net.de/examples/km3badges/-/raw/master/docs-latest-brightgreen.svg
     :target: https://km3py.pages.km3net.de/km3irf
 
+
+KM3NeT instrument response function
+====================================
+
+This project provides a versatile tool that can be used to quickly analyze the sensitivity of the **KM3NeT** detector for various source models.
+Currently it considers only point-like sources. The main feature of the tool is deep targeting to ``gammapy`` software.
+For further analysis in ``gammapy``, ``km3irf`` provides next modules:
+
+* Event list
+* Instrument response function (IRF)
+* Data set
 
 Installation
 ~~~~~~~~~~~~
