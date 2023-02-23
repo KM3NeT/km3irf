@@ -31,6 +31,17 @@ stages:
       reports:
         junit: "reports/junit*.xml"
 
+test-py3.6:
+    image: docker.km3net.de/base/python:3.6
+    stage: test
+    script:
+        - pip install -U pip setuptools wheel setuptools_scm
+        - hash -r
+        - make install-test
+        - make test
+    <<: *junit_definition
+    allow_failure: true
+
 test-py3.7:
     image: docker.km3net.de/base/python:3.7
     stage: test
