@@ -2,8 +2,12 @@
 source = km3irf
 
 [report]
+include = 
+    src/km3irf/*
 omit =
     src/km3irf/version.py
+    src/km3irf/__init__.py
+    src/km3irf/data/
 exclude_lines =
     pragma: no cover
     raise AssertionError

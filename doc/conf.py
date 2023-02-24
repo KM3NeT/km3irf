@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "autoapi.extension",
     "numpydoc",
-    # "sphinx_gallery.gen_gallery",
+    "sphinx_gallery.gen_gallery",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,12 +57,12 @@ autoapi_options = ["members", "undoc-members", "show-module-summary"]
 autoapi_include_summaries = True
 
 # Gallery
-# sphinx_gallery_conf = {
-#     "backreferences_dir": "gen_modules",
-#     "default_thumb_file": "_static/default_gallery_thumbnail.png",
-#     "examples_dirs": "../examples",  # path to your example scripts
-#     "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
-# }
+sphinx_gallery_conf = {
+    "backreferences_dir": "gen_modules",
+    "default_thumb_file": "_static/default_gallery_thumbnail.png",
+    "examples_dirs": "../examples",  # path to your example scripts
+    "gallery_dirs": "auto_examples",  # path to where to save gallery generated output
+}
 
 # -- Options for HTML output -------------------------------------------------
 
