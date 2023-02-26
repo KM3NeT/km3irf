@@ -58,7 +58,13 @@ class DataContainer:
         weight_factor: re-weight data, default value  -2.5
 
         """
-        alpha_value = self.f_km3io.header.spectrum.alpha
+        try:
+            alpha_value = self.f_km3io.header.spectrum.alpha
+
+        except AttributeError:
+            print("your input data file has no header, alpha_value set to default")
+            alpha_value = -1.4
+
         weights = dict()
         weights[tag] = (df_pass.E_mc ** (weight_factor - alpha_value)).to_numpy()
         weights[tag] *= len(df_pass) / weights[tag].sum()
