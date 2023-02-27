@@ -26,7 +26,7 @@ def merge_fits(
     output_file="all_in_one.fits",
 ):
     r"""
-    Merge separated fits files into one, which can be used in gammapy
+    Merge separated .fits files into one, which can be used in gammapy
 
     Parameters
     ----------
@@ -41,7 +41,8 @@ def merge_fits(
     output_path : str
         path for the merged IRF file
     output_file : str
-        name of the merged .fits file in data foledr of the package
+        name of the merged .fits file in data foledr of the package.
+        .fits should be included in the title.
 
     Returns
     -------
@@ -80,10 +81,18 @@ def merge_fits(
 
 
 def list_data(print_tab=False):
-    """
+    r"""
     Return dictionary of .fits files with names and pathes in the data folder
 
-    print_tab: print a table with content, default False
+    Parameters
+    ----------
+    print_tab : bool, default False
+        print in terminal a table with content of data folder
+
+    Returns
+    -------
+    dict
+        dictionary of files
     """
     tab = PrettyTable(["File Path", "Size, KB"], align="l")
     data_path = path.join(data_dir, "*.fits")

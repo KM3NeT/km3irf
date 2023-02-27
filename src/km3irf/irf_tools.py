@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+A set of functions which are necessary for calculation of IRF
+
+"""
 import numpy as np
 import pandas as pd
 import numba as nb
@@ -12,15 +16,20 @@ import astropy.units as u
 
 def calc_theta(table, mc=True):
     """
-    Calculate the zenith angle theta of events given the direction coordinates x,y,z
+    Calculate the zenith angle theta of events given the direction coordinates x,y,z.
 
-    table: pandas.Dataframe with the events. Needs to have the keys dir_x, dir_y, dir_z for the local event directions.
-
-    mc: wether to use the MonteCarlo (true) or the reconstructed directions (false).
+    Parameters
+    ----------
+    table : pandas.DataFrame
+        Dataframe with the events. Needs to have the keys dir_x, dir_y, dir_z for the local event directions.
+    mc : bool, default True
+        wether to use the MonteCarlo (true) or the reconstructed directions (false).
         The true directions need to have a "_mc" appended to the directions
 
-    Returns: Array of zenith angles in rad
-
+    Returns
+    -------
+    Array
+        of zenith angles in rad
     """
 
     if not mc:
@@ -45,17 +54,23 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
     This is just a historgram with the simulated events.
     The normalization needs to be done afterwards.
 
-    e_bins: Array of energy bins in GeV
+    Parameters
+    ----------
+    e_bins : Array
+        of energy bins in GeV
+    m_bins : Array
+        of energy migration bins (reconstructed energy / true energy)
+    t_bins : Array
+        of zenith angle bins in rad
+    dataset : pandas.DataFrame
+        with the events
+    weights : Array, default 1
+        of weights for each event
 
-    m_bins: Array of energy migration bins (reconstructed energy / true energy)
-
-    t_bins: Array of zenith angle bins in rad
-
-    dataset: pandas.Dataframe with the events
-
-    weights: Array of weights for each event
-
-    Returns: 3-dimensional energy dispersion matrix. Binned in energy, energy migration and zenith angle
+    Returns
+    -------
+    3D energy dispersion matrix
+        binned in energy, energy migration and zenith angle
 
     """
 
@@ -100,17 +115,23 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
     This is a historgram with the simulated evenets.
     The normalization needs to be done afterwards.
 
-    e_bins: Array of energy bins in GeV
+    Parameters
+    ----------
+    e_bins : Array
+        of energy bins in GeV
+    r_bins : Array
+        of radial bins in deg (angle between true and reconstructed direction)
+    t_bins : Array
+        of zenith angle bins in rad
+    dataset : pandas.DataFrame
+        with the events
+    weights : Array, default 1
+        of weights for each event
 
-    r_bins: Array of radial bins in deg (angle between true and reconstructed direction)
-
-    t_bins: Array of zenith angle bins in rad
-
-    dataset: pandas.Dataframe with the events
-
-    weights: Array of weights for each event
-
-    Returns: 3-dimensional PSF matrix. Binned in energy, zenith angle and radial bins
+    Returns
+    -------
+    3D PSF matrix
+        binned in energy, zenith angle and radial bins
 
     """
 
@@ -137,10 +158,13 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
     return psf
 
 
-@jit(
-    nopython=True, fastmath=False, parallel=True
-)  # do not use fastmath=True -- gives 300 aditional entries and no gain
+# do not use fastmath=True -- gives 300 aditional entries and no gain
+@jit(nopython=True, fastmath=False, parallel=True)
 def fill_psf_3D(e_bins, r_bins, t_bins, energy_bins, rad_bins, theta_bins, weights):
+    """
+    numba accelerated helper function to fill the events into the PSF matrix.
+
+    """
     psf = np.zeros((len(r_bins) - 1, len(t_bins) - 1, len(e_bins) - 1))
     for j in prange(len(r_bins) - 1):
         for i in range(len(t_bins) - 1):
@@ -155,17 +179,23 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
     """
     Calculate the effective area in energy and zenith angle bins.
 
-    e_bins: Array of energy bins in GeV
+    Parameters
+    ----------
+    e_bins : Array
+        of energy bins in GeV
+    t_bins : Array
+        of zenith angle bins in rad
+    dataset : pandas.DataFrame
+        with the events
+    gamma : float, default 1.4
+        spectral index of simulated events
+    nevents : float, default 2e7
+        number of generated events
 
-    t_bins: Array of zenith angle bins in rad
-
-    dataset: pandas.Dataframe with the events
-
-    gamma: spectral index of simulated events
-
-    nevents: number of generated events
-
-    Returns: 2D-Array with the effective area in m^2 binned in energy and zenith angle bins
+    Returns
+    -------
+    2D-Array
+        with the effective area in m^2 binned in energy and zenith angle bins
 
     """
 
@@ -184,6 +214,10 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
 
 @jit(nopython=True, fastmath=False, parallel=True)
 def fill_aeff_2D(e_bins, t_bins, energy_bins, theta_bins, w2, E, gamma, nevents):
+    """
+    numba accelerated helper function to calculate effective area.
+
+    """
     T = 365 * 24 * 3600
     aeff = np.empty((len(e_bins) - 1, len(t_bins) - 1))
     for k in prange(len(e_bins) - 1):
