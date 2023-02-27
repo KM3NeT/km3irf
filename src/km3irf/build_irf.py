@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+It allows to produce different .fits files from original data dst.root files , which are required  for IRF.
+
+"""
 import numpy as np
 
 # import awkward as ak
@@ -31,6 +35,19 @@ from scipy.ndimage import gaussian_filter1d, gaussian_filter
 
 
 class DataContainer:
+    """
+    General class, which allows operating with IRF components such as:
+    Effective area (aeff), Point spread function (psf), Energy dispersion (edisp).
+
+    Attributes
+    ----------
+    infile : root
+        input dst.root file with data
+    no_bdt : bool
+        with/out bdt information in input file
+
+    """
+
     def __init__(self, infile, no_bdt=False):
         self.f_km3io = OfflineReader(infile)
         self.f_uproot = ur.open(infile)
@@ -38,7 +55,11 @@ class DataContainer:
 
     def apply_cuts(self):
         """
-        Apply cuts to the created data frame
+        Apply cuts to the created data frame.
+
+        Returns
+        -------
+        None
 
         """
         mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
@@ -48,21 +69,28 @@ class DataContainer:
         # return df_cut
 
     def weight_calc(self, tag, df_pass, weight_factor=-2.5):
-        """
-        calculate the normalized weight factor for each event
+        r"""
+        Calculate the normalized weight factor for each event.
 
-        tag: "nu" or "nubar"
+        Parameters
+        ----------
+        tag : str
+            poddible options "nu" or "nubar"
+        df_pass : pandas.DataFrame
+            incoming data frame
+        weight_factor : float, default -2.5
+            spectral index for re-weight data
 
-        df_pass: incoming data frame
-
-        weight_factor: re-weight data, default value  -2.5
+        Returns
+        -------
+        weights : Array
 
         """
         try:
             alpha_value = self.f_km3io.header.spectrum.alpha
 
         except AttributeError:
-            print("your input data file has no header, alpha_value set to default")
+            print("your input data file has no header, alpha_value set to default -1.4")
             alpha_value = -1.4
 
         weights = dict()
@@ -72,13 +100,19 @@ class DataContainer:
 
     def merge_flavors(self, df_nu, df_nubar):
         """
-        Merge two data frames with differnt flavors in one
+        Merge two data frames with differnt flavors in one.
 
-        df_nu: data frame for 'nu'
+        Parameters
+        ----------
+        df_nu : pandas.DataFrame
+            data frame for 'nu'
+        df_nubar : pandas.DataFrame
+            data frame for 'nubar'
 
-        df_nubar: data frame for 'nubar'
-
-        return the merged pandas data frame
+        Returns
+        -------
+        pandas.DataFrame
+            merged pandas data frame
 
         """
         df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
@@ -93,17 +127,24 @@ class DataContainer:
         output="aeff.fits",
     ):
         """
-        Build Effective Area 2D .fits
+        Build Effective Area 2D .fits file.
 
-        df_pass: incoming data frame
+        Parameters
+        ----------
+        df_pass : pandas.DataFrame
+            incoming data frame
+        weight_factor : float, default -2.5
+            re-weight input data with new spectral index
+        cos_theta_binE : Array, default np.linspace(1, -1, 13)
+            of linear bins for cos of zenith angle theta
+        energy_binE : Array, default np.logspace(2, 8, 49)
+            log numpy array of enegy bins
+        output : str, default "aeff.fits"
+            name of generated Aeff file with extension .fits
 
-        weight_factor: re-weight data, default value  -2.5
-
-        cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
-
-        energy_binE: log numpy array of enegy bins
-
-        output: name of generated Aeff file with extension .fits
+        Returns
+        -------
+        None
 
         """
         theta_binE = np.arccos(cos_theta_binE)
@@ -149,24 +190,32 @@ class DataContainer:
         output="psf.fits",
     ):
         """
-        Build Point Spread Function 3D .fits
+        Build Point Spread Function 3D .fits file.
 
-        df_pass: incoming data frame
+        Parameters
+        ----------
+        df_pass : pandas.DataFrame
+            incoming data frame
+        cos_theta_binE : Array, default np.linspace(1, -1, 7)
+            of linear bins for cos of zenith angle theta
+        energy_binE : Array, default np.logspace(2, 8, 25)
+            log numpy array of enegy bins
+        rad_binE : Array
+            of linear radial bins (20 bins for 0-1 deg, 40 bins for 1-5 deg,
+            50 bins for 5-30 deg, + 1 final bin up to 180 deg)
+        norm : bool, default False
+            enable or disable normalization
+        smooth : bool, default True
+            enable or disable smearing
+        smooth_norm : bool, default True
+            enable or disable smearing with normalization,
+            can't be the same with norm
+        output : str, default "psf.fits"
+            name of generated PSF file with extension .fits
 
-        cos_theta_binE: numpy array of linear bins for cos of zenith angle theta
-
-        energy_binE: log numpy array of enegy bins
-
-        rad_binE: numpy array of linear radial bins
-        (20 bins for 0-1 deg, 40 bins for 1-5 deg, 50 bins for 5-30 deg, + 1 final bin up to 180 deg)
-
-        norm: enable or disable normalization, default False
-
-        smooth: enable or disable smearing, default True
-
-        smooth_norm: enable or disable smearing with normalization, can't be the same with norm, default True
-
-        output: name of generated PSF file with extension .fits
+        Returns
+        -------
+        None
 
         """
         theta_binE = np.arccos(cos_theta_binE)
@@ -236,7 +285,31 @@ class DataContainer:
         output="edisp.fits",
     ):
         """
-        Build Energy dispertion 3D .fits
+        Build Energy dispertion 3D .fits file.
+
+        Parameters
+        ----------
+        df_pass : pandas.DataFrame
+            incoming data frame
+        cos_theta_binE : Array, default np.linspace(1, -1, 7)
+            of linear bins for cos of zenith angle theta
+        energy_binE : Array, default np.logspace(2, 8, 25)
+            log numpy array of enegy bins
+        migra_binE : Array, default np.logspace(-5, 2, 57)
+            log numpy array of migration enegy bins
+        norm : bool, default False
+            enable or disable normalization
+        smooth : bool, default True
+            enable or disable smearing
+        smooth_norm : bool, default True
+            enable or disable smearing with normalization,
+            can't be the same with norm
+        output : str, default "edisp.fits"
+            name of generated Edisp file with extension .fits
+
+        Returns
+        -------
+        None
 
         """
         theta_binE = np.arccos(cos_theta_binE)
@@ -295,12 +368,18 @@ class DataContainer:
 
 def unpack_data(no_bdt, uproot_file):
     """
-    retrieve information from data and pack it to pandas DataFrame
+    Retrieve information from data file and pack it to pandas.DataFrame.
 
-    :param uproot_file: input uproot file
-    :type: opened file with uproot
-    :return: pandas data frame
-    :rtype: pd.DataFrame
+    Parameters
+    ----------
+    no_bdt : bool
+       with/out bdt information in input file
+    uproot_file : uproot.open()
+        input uproot file
+
+    Returns
+    -------
+    pandas.DataFrame
 
     """
     # Access data arrays
@@ -334,13 +413,21 @@ def unpack_data(no_bdt, uproot_file):
 
 def get_cut_mask(bdt0, bdt1, dir_z):
     """
-    bdt0: to determine groups to which BDT cut should be applied (upgoing/horizontal/downgoing)
+    Create a cut mask for chosen cuts
 
-    bdt1: BDT score in the range [-1, 1]. Closer to 1 means more signal-like
+    Parameters
+    ----------
+    bdt0 : int
+        to determine groups to which BDT cut should be applied
+        (upgoing/horizontal/downgoing)
+    bdt1 : float
+        BDT score in the range [-1, 1]. Closer to 1 means more signal-like
+    dir_z : float
+        the reconstructed z-direction of the event
 
-    dir_z: is the reconstructed z-direction of the event
-
-    return a mask for set cuts
+    Returns
+    -------
+    Array(bool)
 
     """
 
@@ -358,6 +445,8 @@ def get_cut_mask(bdt0, bdt1, dir_z):
 
 # Class for writing aeff_2D to fits files
 class WriteAeff:
+    """Class with defenitions of headers for Aeff .fits file."""
+
     def __init__(self, energy_binC, energy_binE, theta_binC, theta_binE, aeff_T):
         self.col1 = fits.Column(
             name="ENERG_LO",
@@ -393,9 +482,12 @@ class WriteAeff:
 
     def to_fits(self, file_name):
         """
-        write Aeff to .fits file
+        Write Aeff to .fits file.
 
-        file_name: should have .fits extension
+        Parameters
+        ----------
+        file_name : str
+            should have .fits extension
 
         """
         cols = fits.ColDefs([self.col1, self.col2, self.col3, self.col4, self.col5])
@@ -419,6 +511,8 @@ class WriteAeff:
 
 # Class for writing PSF to fits files
 class WritePSF:
+    """Class with defenitions of headers for PSF .fits file."""
+
     def __init__(
         self,
         energy_binC,
@@ -474,6 +568,14 @@ class WritePSF:
         )
 
     def to_fits(self, file_name):
+        """
+        Write PSF to .fits file.
+
+        Parameters
+        ----------
+        file_name : str
+            should have .fits extension
+        """
         cols = fits.ColDefs(
             [
                 self.col1,
@@ -505,6 +607,8 @@ class WritePSF:
 
 # Class for writing Edisp to fits files
 class WriteEdisp:
+    """Class with defenitions of headers for Edisp .fits file."""
+
     def __init__(
         self,
         e_binc_coarse,
@@ -561,6 +665,14 @@ class WriteEdisp:
         )
 
     def to_fits(self, file_name):
+        """
+        Write Edisp to .fits file.
+
+        Parameters
+        ----------
+        file_name : str
+            should have .fits extension
+        """
         cols = fits.ColDefs(
             [
                 self.col1,
