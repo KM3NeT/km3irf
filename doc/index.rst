@@ -11,11 +11,9 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   examples
-   changelog
-
    autoapi/index
-
+   examples
+   changelog 
    Code Coverage <http://km3py.pages.km3net.de/km3irf/coverage>
 
 .. include:: ../README.rst

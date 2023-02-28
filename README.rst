@@ -20,7 +20,7 @@ For further analysis in ``gammapy``, ``km3irf`` provides next modules:
 * Data set
 
 Installation
-~~~~~~~~~~~~
+------------
 
 It is recommended to first create an isolated virtualenvironment to not interfere
 with other Python projects::
