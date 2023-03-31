@@ -4,9 +4,11 @@
 .. image:: https://git.km3net.de/km3py/km3irf/badges/main/coverage.svg
     :target: https://km3py.pages.km3net.de/km3irf/coverage
 
-.. image:: https://git.km3net.de/examples/km3badges/-/raw/master/docs-latest-brightgreen.svg
+.. image:: https://git.km3net.de/examples/km3badges/-/raw/main/docs-latest-brightgreen.svg
     :target: https://km3py.pages.km3net.de/km3irf
 
+.. image:: https://git.km3net.de/km3py/km3irf/-/badges/release.svg
+    :target: https://git.km3net.de/km3py/km3irf/-/releases
 
 KM3NeT instrument response function
 ====================================
