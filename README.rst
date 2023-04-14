@@ -24,21 +24,30 @@ For further analysis in ``gammapy``, ``km3irf`` provides next modules:
 Installation
 ------------
 
-It is recommended to first create an isolated virtualenvironment to not interfere
-with other Python projects::
+It is recommended to create an isolated virtualenvironment to not interfere
+with other Python projects, preferably inside the project's folder. First clone
+the repository with::
 
-  git clone https://git.km3net.de/km3py/km3irf
+  git clone git@git.km3net.de:km3py/km3irf.git
+
+or::
+
+  git clone https://git.km3net.de/km3py/km3irf.git
+
+Create and acitvate a virtual environment::
+
   cd km3irf
   python3 -m venv venv
   . venv/bin/activate
 
-Install directly from the Git server via ``pip`` (no cloneing needed)::
-
-  pip install git+https://git.km3net.de/km3py/km3irf
-
-Or clone the repository and run::
+Install the package with::
 
   make install
+
+You can also install the package directly from the Git server via ``pip`` (no cloning needed)
+into any Python environment easily with::
+
+  pip install git+https://git.km3net.de/km3py/km3irf
 
 To install all the development dependencies, in case you want to contribute or
 run the test suite::
