@@ -100,7 +100,8 @@ class DataContainer:
         weights[tag] *= len(df_pass) / weights[tag].sum()
         return weights
 
-    def merge_flavors(self, df_nu, df_nubar):
+    @staticmethod
+    def merge_flavors(df_nu, df_nubar):
         """
         Merge two data frames with differnt flavors in one.
 
