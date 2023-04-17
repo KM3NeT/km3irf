@@ -19,7 +19,6 @@ import matplotlib.pyplot as plt
 
 from astropy.io import fits
 import astropy.units as u
-from astropy.io import fits
 from astropy.visualization import quantity_support
 
 from scipy.stats import binned_statistic
@@ -357,34 +356,37 @@ class DataContainer:
 
         return None
 
-    def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
-        """Plot effective area image."""
-        ax = plt.gca() if ax is None else ax
+    def plot_aeff_2D(self):
+        pass
 
-        energy = self.axes["energy_true"]
-        zenith = self.axes["zenith"]
-        aeff = self.evaluate(
-            offset=zenith.center, energy_true=energy.center[:, np.newaxis]
-        )
+    # def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
+    #     """Plot effective area image."""
+    #     ax = plt.gca() if ax is None else ax
 
-        vmin, vmax = np.nanmin(aeff.value), np.nanmax(aeff.value)
+    #     energy = self.axes["energy_true"]
+    #     zenith = self.axes["zenith"]
+    #     aeff = self.evaluate(
+    #         offset=zenith.center, energy_true=energy.center[:, np.newaxis]
+    #     )
 
-        kwargs.setdefault("cmap", "GnBu")
-        kwargs.setdefault("edgecolors", "face")
-        kwargs.setdefault("vmin", vmin)
-        kwargs.setdefault("vmax", vmax)
+    #     vmin, vmax = np.nanmin(aeff.value), np.nanmax(aeff.value)
 
-        with quantity_support():
-            caxes = ax.pcolormesh(energy.edges, offset.edges, aeff.value.T, **kwargs)
+    #     kwargs.setdefault("cmap", "GnBu")
+    #     kwargs.setdefault("edgecolors", "face")
+    #     kwargs.setdefault("vmin", vmin)
+    #     kwargs.setdefault("vmax", vmax)
 
-        energy.format_plot_xaxis(ax=ax)
-        offset.format_plot_yaxis(ax=ax)
+    #     with quantity_support():
+    #         caxes = ax.pcolormesh(energy.edges, offset.edges, aeff.value.T, **kwargs)
 
-        if add_cbar:
-            label = f"Effective Area [{aeff.unit}]"
-            ax.figure.colorbar(caxes, ax=ax, label=label)
+    #     energy.format_plot_xaxis(ax=ax)
+    #     offset.format_plot_yaxis(ax=ax)
 
-        return ax
+    #     if add_cbar:
+    #         label = f"Effective Area [{aeff.unit}]"
+    #         ax.figure.colorbar(caxes, ax=ax, label=label)
+
+    #     return ax
 
 
 def unpack_data(no_bdt, uproot_file):
