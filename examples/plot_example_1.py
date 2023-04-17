@@ -49,27 +49,27 @@ test_irf.df.shape[0]
 # Apply re-weighting procedure for calculation new weights, which correspond
 # to a new spectral index. Weights are not needed for *Effective Area*.
 
-weighted_dict = test_irf.weight_calc(tag="nu", df_pass=test_irf.df)
+weighted_dict = test_irf.weight_calc(tag="nu")
 weighted_dict.values()
 
 # %%
 # To create ``.fits`` for *Effective area*, we need to pass a pandas data frame as input.
 
-test_irf.build_aeff(df_pass=test_irf.df)
+test_irf.build_aeff()
 
 # %%
 # Point Spread Function
 # ---------------------
 # In this part we create ``.fits`` for *Point Spread Function*
 
-test_irf.build_psf(df_pass=test_irf.df)
+test_irf.build_psf()
 
 # %%
 # Energy dispertion
 # -----------------
 # In this part we create ``.fits`` for *Energy dispertion*
 
-test_irf.build_edisp(df_pass=test_irf.df, norm=True, smooth=False, smooth_norm=False)
+test_irf.build_edisp(norm=True, smooth=False, smooth_norm=False)
 
 # %%
 # Merge into one file

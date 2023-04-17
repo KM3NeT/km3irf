@@ -42,7 +42,7 @@ class TestBuild_IRF(unittest.TestCase):
         assert (df_test.size == 110) | (df_test.size == 90)
 
     def test_buid_aeff(self):
-        self.init_data.build_aeff(df_pass=self.init_data.df)
+        self.init_data.build_aeff()
         size_of = path.getsize(path.join(path.abspath(curdir), "aeff.fits"))
         with fits.open(path.join(path.abspath(curdir), "aeff.fits")) as file_fits:
             global header_fits
@@ -53,7 +53,7 @@ class TestBuild_IRF(unittest.TestCase):
         remove(path.join(path.abspath(curdir), "aeff.fits"))
 
     def test_buid_psf(self):
-        self.init_data.build_psf(df_pass=self.init_data.df)
+        self.init_data.build_psf()
         size_of = path.getsize(path.join(path.abspath(curdir), "psf.fits"))
         with fits.open(path.join(path.abspath(curdir), "psf.fits")) as file_fits:
             global header_fits
@@ -64,7 +64,7 @@ class TestBuild_IRF(unittest.TestCase):
         remove(path.join(path.abspath(curdir), "psf.fits"))
 
     def test_buid_edisp(self):
-        self.init_data.build_edisp(df_pass=self.init_data.df)
+        self.init_data.build_edisp()
         self.file_name = "edisp.fits"
         size_of = path.getsize(path.join(path.abspath(curdir), self.file_name))
         with fits.open(path.join(path.abspath(curdir), self.file_name)) as file_fits:
