@@ -13,12 +13,14 @@ import uproot as ur
 from km3io import OfflineReader
 from .irf_tools import aeff_2D, psf_3D, edisp_3D
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+
 # from matplotlib.colors import LogNorm
 
 from astropy.io import fits
 import astropy.units as u
 from astropy.io import fits
+from astropy.visualization import quantity_support
 
 from scipy.stats import binned_statistic
 from scipy.ndimage import gaussian_filter1d, gaussian_filter
@@ -364,6 +366,35 @@ class DataContainer:
         new_edisp_file.to_fits(file_name=output)
 
         return None
+
+    def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
+        """Plot effective area image."""
+        ax = plt.gca() if ax is None else ax
+
+        energy = self.axes["energy_true"]
+        zenith = self.axes["zenith"]
+        aeff = self.evaluate(
+            offset=zenith.center, energy_true=energy.center[:, np.newaxis]
+        )
+
+        vmin, vmax = np.nanmin(aeff.value), np.nanmax(aeff.value)
+
+        kwargs.setdefault("cmap", "GnBu")
+        kwargs.setdefault("edgecolors", "face")
+        kwargs.setdefault("vmin", vmin)
+        kwargs.setdefault("vmax", vmax)
+
+        with quantity_support():
+            caxes = ax.pcolormesh(energy.edges, offset.edges, aeff.value.T, **kwargs)
+
+        energy.format_plot_xaxis(ax=ax)
+        offset.format_plot_yaxis(ax=ax)
+
+        if add_cbar:
+            label = f"Effective Area [{aeff.unit}]"
+            ax.figure.colorbar(caxes, ax=ax, label=label)
+
+        return ax
 
 
 def unpack_data(no_bdt, uproot_file):
