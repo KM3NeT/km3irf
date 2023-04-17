@@ -70,7 +70,7 @@ class DataContainer:
         # df_cut = self.df[mask].copy()
         # return df_cut
 
-    def weight_calc(self, tag, df_pass, weight_factor=-2.5):
+    def weight_calc(self, tag, weight_factor=-2.5):
         r"""
         Calculate the normalized weight factor for each event.
 
@@ -78,8 +78,6 @@ class DataContainer:
         ----------
         tag : str
             poddible options "nu" or "nubar"
-        df_pass : pandas.DataFrame
-            incoming data frame
         weight_factor : float, default -2.5
             spectral index for re-weight data
 
@@ -96,8 +94,8 @@ class DataContainer:
             alpha_value = -1.4
 
         weights = dict()
-        weights[tag] = (df_pass.E_mc ** (weight_factor - alpha_value)).to_numpy()
-        weights[tag] *= len(df_pass) / weights[tag].sum()
+        weights[tag] = (self.df.E_mc ** (weight_factor - alpha_value)).to_numpy()
+        weights[tag] *= len(self.df) / weights[tag].sum()
         return weights
 
     @staticmethod
@@ -123,7 +121,6 @@ class DataContainer:
 
     def build_aeff(
         self,
-        df_pass,
         weight_factor=-2.5,
         cos_theta_binE=np.linspace(1, -1, 13),
         energy_binE=np.logspace(2, 8, 49),
@@ -134,8 +131,6 @@ class DataContainer:
 
         Parameters
         ----------
-        df_pass : pandas.DataFrame
-            incoming data frame
         weight_factor : float, default -2.5
             re-weight input data with new spectral index
         cos_theta_binE : Array, default np.linspace(1, -1, 13)
@@ -160,9 +155,9 @@ class DataContainer:
             aeff_2D(
                 e_bins=energy_binE,
                 t_bins=theta_binE,
-                dataset=df_pass,
+                dataset=self.df,
                 gamma=(-weight_factor),
-                nevents=df_pass.shape[0],
+                nevents=self.df.shape[0],
             )
             * 2
         )  # two building blocks
@@ -176,7 +171,6 @@ class DataContainer:
 
     def build_psf(
         self,
-        df_pass,
         cos_theta_binE=np.linspace(1, -1, 7),
         energy_binE=np.logspace(2, 8, 25),
         rad_binE=np.concatenate(
@@ -197,8 +191,6 @@ class DataContainer:
 
         Parameters
         ----------
-        df_pass : pandas.DataFrame
-            incoming data frame
         cos_theta_binE : Array, default np.linspace(1, -1, 7)
             of linear bins for cos of zenith angle theta
         energy_binE : Array, default np.logspace(2, 8, 25)
@@ -232,7 +224,7 @@ class DataContainer:
             e_bins=energy_binE,
             r_bins=rad_binE,
             t_bins=theta_binE,
-            dataset=df_pass,
+            dataset=self.df,
             weights=1,
         )
 
@@ -278,7 +270,6 @@ class DataContainer:
 
     def build_edisp(
         self,
-        df_pass,
         cos_theta_binE=np.linspace(1, -1, 7),
         energy_binE=np.logspace(2, 8, 25),
         migra_binE=np.logspace(-5, 2, 57),
@@ -292,8 +283,6 @@ class DataContainer:
 
         Parameters
         ----------
-        df_pass : pandas.DataFrame
-            incoming data frame
         cos_theta_binE : Array, default np.linspace(1, -1, 7)
             of linear bins for cos of zenith angle theta
         energy_binE : Array, default np.logspace(2, 8, 25)
@@ -326,7 +315,7 @@ class DataContainer:
             e_bins=energy_binE,
             m_bins=migra_binE,
             t_bins=theta_binE,
-            dataset=df_pass,
+            dataset=self.df,
             weights=1,
         )
 
