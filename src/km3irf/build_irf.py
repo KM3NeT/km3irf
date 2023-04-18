@@ -358,6 +358,22 @@ class DataContainer:
 
     def plot_aeff_2D(self):
         pass
+        # with fits.open(aeff_path) as hdul:
+        #     hdul.info()
+        #     data = hdul[1].data
+
+        # energy_center = np.log10((data["ENERG_HI"] + data["ENERG_LO"]) / 2.0)
+        # zenith = (np.cos(data["THETA_HI"]) + np.cos(data["THETA_LO"])) / 2
+        # Y, X = np.meshgrid(energy_center, zenith)
+        # Z = np.nan_to_num(np.log10(data["EFFAREA"][0]), neginf=-3)
+        # ax = plt.contourf(X, Y, Z, cmap=cm.RdPu)
+        # label = r" Effective Area $[\mathrm{m^2}]$"
+        # plt.colorbar(ax, shrink=0.9, aspect=20, label=label)
+        # ax.changed()
+        # ax.axes.set_xlabel(r"$ \cos(\theta)$")
+        # ax.axes.set_ylabel(r"$\log(E) [\mathrm{GeV}]$")
+        # ax.axes.invert_xaxis()
+        # return ax
 
     # def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
     #     """Plot effective area image."""
@@ -371,7 +387,7 @@ class DataContainer:
 
     #     vmin, vmax = np.nanmin(aeff.value), np.nanmax(aeff.value)
 
-    #     kwargs.setdefault("cmap", "GnBu")
+    #     kwargs.setdefault("cmap", "cm.RdPu")
     #     kwargs.setdefault("edgecolors", "face")
     #     kwargs.setdefault("vmin", vmin)
     #     kwargs.setdefault("vmax", vmax)
