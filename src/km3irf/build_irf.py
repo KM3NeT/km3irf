@@ -379,37 +379,95 @@ def plot_aeff_2D(
     ax.axes.set_xlabel(r"$ \cos(\theta)$")
     # ax.axes.set_ylabel(r"$\log(E) [\mathrm{GeV}]$")
     ax.axes.set_ylabel(f"log(E) [{head['TUNIT1']}]")
-    ax.axes.invert_xaxis()
+    # ax.axes.invert_xaxis()
     return ax
 
-    # def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
-    #     """Plot effective area image."""
-    #     ax = plt.gca() if ax is None else ax
 
-    #     energy = self.axes["energy_true"]
-    #     zenith = self.axes["zenith"]
-    #     aeff = self.evaluate(
-    #         offset=zenith.center, energy_true=energy.center[:, np.newaxis]
-    #     )
+def plot_aeff(
+    aeff_path=path.join(data_dir, "aeff.fits"), ax=None, add_cbar=True, **kwargs
+):
+    """Plot effective area image."""
+    ax = plt.gca() if ax is None else ax
 
-    #     vmin, vmax = np.nanmin(aeff.value), np.nanmax(aeff.value)
+    # energy = self.axes["energy_true"]
+    # zenith = self.axes["zenith"]
+    # aeff = self.evaluate(
+    #     offset=zenith.center, energy_true=energy.center[:, np.newaxis]
+    # )
+    np.seterr(divide="ignore")
+    with fits.open(aeff_path) as hdul:
+        data = hdul[1].data
+        head = hdul[1].header
 
-    #     kwargs.setdefault("cmap", "cm.RdPu")
-    #     kwargs.setdefault("edgecolors", "face")
-    #     kwargs.setdefault("vmin", vmin)
-    #     kwargs.setdefault("vmax", vmax)
+    energy_center = np.log10((data["ENERG_HI"] + data["ENERG_LO"]) / 2.0)
+    zenith = (np.cos(data["THETA_HI"]) + np.cos(data["THETA_LO"])) / 2.0
+    Y, X = np.meshgrid(energy_center, zenith)
+    Z = np.nan_to_num(np.log10(data["EFFAREA"][0]), neginf=-3)
 
-    #     with quantity_support():
-    #         caxes = ax.pcolormesh(energy.edges, offset.edges, aeff.value.T, **kwargs)
+    vmin, vmax = np.nanmin(Z), np.nanmax(Z)
 
-    #     energy.format_plot_xaxis(ax=ax)
-    #     offset.format_plot_yaxis(ax=ax)
+    kwargs.setdefault("cmap", "RdPu")
+    kwargs.setdefault("edgecolors", "face")
+    kwargs.setdefault("vmin", vmin)
+    kwargs.setdefault("vmax", vmax)
 
-    #     if add_cbar:
-    #         label = f"Effective Area [{aeff.unit}]"
-    #         ax.figure.colorbar(caxes, ax=ax, label=label)
+    with quantity_support():
+        caxes = ax.pcolormesh(X, Y, Z, **kwargs)
 
-    #     return ax
+    ax.axes.set_xlabel(r"$ \cos(\theta)$")
+    ax.axes.set_ylabel(f"log(E) [{head['TUNIT1']}]")
+
+    if add_cbar:
+        label = f"Effective Area [{head['TUNIT5']}]"
+        ax.figure.colorbar(caxes, ax=ax, label=label)
+
+    return ax
+
+
+def plot_energy_dependence(
+    aeff_path=path.join(data_dir, "aeff.fits"), ax=None, zenith_index=None, **kwargs
+):
+    """Plot effective area versus energy for a given zenith angle.
+    Parameters
+    ----------
+    ax : `~matplotlib.axes.Axes`, optional
+        Axis
+    zenith_index : `~astropy.coordinates.Angle`
+        Zenith
+    kwargs : dict
+        Forwarded tp plt.plot()
+    Returns
+    -------
+    ax : `~matplotlib.axes.Axes`
+        Axis
+    """
+    ax = plt.gca() if ax is None else ax
+
+    np.seterr(divide="ignore")
+    with fits.open(aeff_path) as hdul:
+        data = hdul[1].data
+        head = hdul[1].header
+
+    energy_center = np.log10((data["ENERG_HI"] + data["ENERG_LO"]) / 2.0)
+    print(energy_center.shape)
+    zenith = (np.cos(data["THETA_HI"]) + np.cos(data["THETA_LO"])) / 2.0
+
+    if zenith_index is None:
+        zenith_index = np.linspace(0, len(zenith) - 1, 4, dtype=int)
+
+    # energy_axis = self.axes["energy_true"]
+
+    for zen in zenith_index:
+        # area = self.evaluate(offset=off, energy_true=energy_axis.center)
+        area = np.nan_to_num(np.log10(data["EFFAREA"][0][zen]), neginf=-3)
+        label = kwargs.pop("label", f"offset = {zen}")
+        with quantity_support():
+            ax.plot(energy_center[0], area, label=label, **kwargs)
+
+    # energy_axis.format_plot_xaxis(ax=ax)
+    ax.set_ylabel(f"Effective Area [{head['TUNIT5']}]")
+    ax.legend()
+    return ax
 
 
 def unpack_data(no_bdt, uproot_file):
