@@ -14,6 +14,7 @@ from km3io import OfflineReader
 from .irf_tools import aeff_2D, psf_3D, edisp_3D
 
 import matplotlib.pyplot as plt
+from matplotlib import cm
 
 # from matplotlib.colors import LogNorm
 
@@ -23,7 +24,8 @@ from astropy.visualization import quantity_support
 
 from scipy.stats import binned_statistic
 from scipy.ndimage import gaussian_filter1d, gaussian_filter
-
+from .utils import data_dir
+from os import path
 
 # from collections import defaultdict
 
@@ -356,24 +358,29 @@ class DataContainer:
 
         return None
 
-    def plot_aeff_2D(self):
-        pass
-        # with fits.open(aeff_path) as hdul:
-        #     hdul.info()
-        #     data = hdul[1].data
 
-        # energy_center = np.log10((data["ENERG_HI"] + data["ENERG_LO"]) / 2.0)
-        # zenith = (np.cos(data["THETA_HI"]) + np.cos(data["THETA_LO"])) / 2
-        # Y, X = np.meshgrid(energy_center, zenith)
-        # Z = np.nan_to_num(np.log10(data["EFFAREA"][0]), neginf=-3)
-        # ax = plt.contourf(X, Y, Z, cmap=cm.RdPu)
-        # label = r" Effective Area $[\mathrm{m^2}]$"
-        # plt.colorbar(ax, shrink=0.9, aspect=20, label=label)
-        # ax.changed()
-        # ax.axes.set_xlabel(r"$ \cos(\theta)$")
-        # ax.axes.set_ylabel(r"$\log(E) [\mathrm{GeV}]$")
-        # ax.axes.invert_xaxis()
-        # return ax
+def plot_aeff_2D(
+    aeff_path=path.join(data_dir, "aeff.fits"),
+):
+    np.seterr(divide="ignore")
+    with fits.open(aeff_path) as hdul:
+        data = hdul[1].data
+        head = hdul[1].header
+
+    energy_center = np.log10((data["ENERG_HI"] + data["ENERG_LO"]) / 2.0)
+    zenith = (np.cos(data["THETA_HI"]) + np.cos(data["THETA_LO"])) / 2.0
+    Y, X = np.meshgrid(energy_center, zenith)
+    Z = np.nan_to_num(np.log10(data["EFFAREA"][0]), neginf=-3)
+    ax = plt.contourf(X, Y, Z, cmap=cm.RdPu)
+    # label = r" Effective Area $[\mathrm{m^2}]$"
+    label = f" Effective Area [{head['TUNIT5']}]"
+    plt.colorbar(ax, shrink=0.9, aspect=20, label=label)
+    ax.changed()
+    ax.axes.set_xlabel(r"$ \cos(\theta)$")
+    # ax.axes.set_ylabel(r"$\log(E) [\mathrm{GeV}]$")
+    ax.axes.set_ylabel(f"log(E) [{head['TUNIT1']}]")
+    ax.axes.invert_xaxis()
+    return ax
 
     # def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
     #     """Plot effective area image."""
