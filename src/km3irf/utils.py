@@ -183,8 +183,8 @@ class DrawAeff:
         ----------
         ax : `~matplotlib.axes.Axes`, optional
             Axis
-        energy_index : `~astropy.units.Quantity`
-            Energy
+        energy_index : List
+            list of items in energy axes
         **kwargs : dict
             Keyword argument passed to `~matplotlib.pyplot.plot`
         Returns
