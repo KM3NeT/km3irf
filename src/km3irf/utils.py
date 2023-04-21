@@ -232,7 +232,19 @@ class DrawAeff:
         return ax
 
     def plot_aeff(self, ax=None, add_cbar=True, **kwargs):
-        """Plot effective area image."""
+        """
+        Plot effective area image.
+
+        Parameters
+        ----------
+        ax : `~matplotlib.axes.Axes`, optional
+            Axis
+        add_cbar : bool, default True
+            add color bar to plot
+        **kwargs : dict
+            Keyword argument passed to `~matplotlib.pyplot.plot`
+
+        """
 
         ax = plt.gca() if ax is None else ax
         Y, X = np.meshgrid(self.energy_center, self.zenith)
