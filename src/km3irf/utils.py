@@ -284,3 +284,39 @@ class DrawAeff:
         self.plot_zenith_dependence(ax=axes[1])
         self.plot_aeff(ax=axes[2])
         plt.tight_layout()
+
+
+class DrawEdisp:
+    """Class is responsible for production of Edisp plots."""
+
+    def __init__(self):
+        pass
+
+    def peek(self, figsize=(15, 4)):
+        """
+        Quick-look summary plots for Edisp.
+
+        Parameters
+        ----------
+        figsize : tuple
+            Size of the figure.
+        """
+        pass
+
+
+class DrawPSF:
+    """Class is responsible for production of PSF plots."""
+
+    def __init__(self):
+        pass
+
+    def peek(self, figsize=(15, 4)):
+        """
+        Quick-look summary plots for PSF.
+
+        Parameters
+        ----------
+        figsize : tuple
+            Size of the figure.
+        """
+        pass
