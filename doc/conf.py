@@ -24,6 +24,7 @@ from pkg_resources import get_distribution
 
 version = get_distribution("km3irf").version
 short_version = ".".join(version.split(".")[:2])
+doc_version = ".".join(version.split("+")[:1])
 project = "km3irf {}".format(short_version)
 copyright = "{0}, Tamas Gal and Mikhail Smirnov".format(date.today().year)
 author = "Tamas Gal, Mikhail Smirnov"
@@ -68,9 +69,6 @@ sphinx_gallery_conf = {
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-# html_theme = "sphinx_rtd_theme"
-# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_theme = "pydata_sphinx_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -78,6 +76,7 @@ html_theme = "pydata_sphinx_theme"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
 html_title = "km3irf {}".format(version)
+html_logo = "_static/logo_km3irf_light.png"
 
 # Specify icons from pydata_sphinx_theme
 html_theme_options = {
@@ -95,4 +94,9 @@ html_theme_options = {
             "type": "fontawesome",
         },
     ],
+    "logo": {
+        "text": "km3irf {}".format(doc_version),
+        "image_dark": "_static/logo_km3irf_dark.png",
+        "alt_text": "km3irf",
+    },
 }
