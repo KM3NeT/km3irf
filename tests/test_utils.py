@@ -7,6 +7,7 @@ from astropy.io import fits
 from km3net_testdata import data_path
 
 from km3irf import utils
+from km3irf.test_utils import mpl_plot_check
 
 
 class TestUtils(unittest.TestCase):
@@ -29,3 +30,13 @@ class TestDrawClasses(unittest.TestCase):
     def test_init(self):
         assert len(self.aeff.energy_center) == 48
         assert len(self.aeff.zenith) == 12
+
+    def test_plot(self):
+        with mpl_plot_check():
+            self.aeff.plot_aeff()
+
+        with mpl_plot_check():
+            self.aeff.plot_energy_dependence()
+
+        with mpl_plot_check():
+            self.aeff.plot_zenith_dependence()
