@@ -8,6 +8,7 @@ which can be used for writing tests.
 
 import matplotlib.pyplot as plt
 
+
 # copied from gammapy tests
 def mpl_plot_check():
     """Matplotlib plotting test context manager.
