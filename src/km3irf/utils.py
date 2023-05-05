@@ -289,8 +289,72 @@ class DrawAeff:
 class DrawEdisp:
     """Class is responsible for production of Edisp plots."""
 
-    def __init__(self):
-        pass
+    np.seterr(divide="ignore")
+
+    def __init__(self, edisp_path=path.join(data_dir, "edisp.fits")):
+        self.edisp_path = edisp_path
+        with fits.open(self.edisp_path) as hdul:
+            self.data = hdul[1].data
+            self.head = hdul[1].header
+        self.energy_center = np.log10(
+            (self.data["ENERG_HI"][0] + self.data["ENERG_LO"][0]) / 2.0
+        )
+        self.migra_center = np.log10(
+            (self.data["MIGRA_HI"][0] + self.data["MIGRA_LO"][0]) / 2.0
+        )
+        self.zenith = (
+            np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
+        ) / 2.0
+
+    def plot_bias(self, ax=None, zenith_index=None, add_cbar=False, **kwargs):
+        """Plot migration as a function of true energy for a given zenith.
+        Parameters
+        ----------
+        ax : `~matplotlib.axes.Axes`, optional
+            Axis
+        offset : `~astropy.coordinates.Angle`, optional
+            Offset
+        add_cbar : bool
+            Add a colorbar to the plot.
+        kwargs : dict
+            Keyword arguments passed to `~matplotlib.pyplot.pcolormesh`.
+        Returns
+        -------
+        ax : `~matplotlib.axes.Axes`
+            Axis
+        """
+        kwargs.setdefault("cmap", "GnBu")
+        # kwargs.setdefault("norm", PowerNorm(gamma=0.5))
+
+        ax = plt.gca() if ax is None else ax
+
+        if zenith_index is None:
+            zenith_index = int(len(self.zenith) / 2)
+
+        Y, X = np.meshgrid(self.migra_center, self.energy_center)
+        # Z = np.nan_to_num(np.log10(self.data["EFFAREA"][0]), neginf=-3)
+        Z = self.data["MATRIX"][0][zenith_index]
+
+        # energy_true = self.axes["energy_true"]
+        # migra = self.axes["migra"]
+
+        # z = self.evaluate(
+        #     offset=offset,
+        #     energy_true=energy_true.center.reshape(1, -1, 1),
+        #     migra=migra.center.reshape(1, 1, -1),
+        # ).value[0]
+
+        with quantity_support():
+            caxes = ax.pcolormesh(X, Y, Z, **kwargs)
+
+        # energy_true.format_plot_xaxis(ax=ax)
+        # migra.format_plot_yaxis(ax=ax)
+
+        # if add_cbar:
+        #     label = "Probability density [A.U]."
+        #     ax.figure.colorbar(caxes, ax=ax, label=label)
+
+        return ax
 
     def peek(self, figsize=(15, 4)):
         """
