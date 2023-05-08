@@ -8,6 +8,7 @@ which can be used for better functionality.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 from astropy.io import fits
 from astropy.visualization import quantity_support
 from os import path, listdir
@@ -243,6 +244,10 @@ class DrawAeff:
             add color bar to plot
         **kwargs : dict
             Keyword argument passed to `~matplotlib.pyplot.plot`
+        Returns
+        -------
+        ax : `~matplotlib.axes.Axes`
+            Axis
 
         """
 
@@ -306,15 +311,15 @@ class DrawEdisp:
             np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
         ) / 2.0
 
-    def plot_bias(self, ax=None, zenith_index=None, add_cbar=False, **kwargs):
-        """Plot migration as a function of true energy for a given zenith.
+    def plot_bias(self, ax=None, zenith_index=None, add_cbar=True, **kwargs):
+        """Plot PDF as a function of true energy and migration for a given zenith.
         Parameters
         ----------
         ax : `~matplotlib.axes.Axes`, optional
             Axis
-        offset : `~astropy.coordinates.Angle`, optional
-            Offset
-        add_cbar : bool
+        zenith_index : int, optional
+            index corresponds to item in zenith list
+        add_cbar : bool, default True
             Add a colorbar to the plot.
         kwargs : dict
             Keyword arguments passed to `~matplotlib.pyplot.pcolormesh`.
@@ -323,36 +328,38 @@ class DrawEdisp:
         ax : `~matplotlib.axes.Axes`
             Axis
         """
-        kwargs.setdefault("cmap", "GnBu")
-        # kwargs.setdefault("norm", PowerNorm(gamma=0.5))
 
         ax = plt.gca() if ax is None else ax
 
         if zenith_index is None:
             zenith_index = int(len(self.zenith) / 2)
 
-        Y, X = np.meshgrid(self.migra_center, self.energy_center)
-        # Z = np.nan_to_num(np.log10(self.data["EFFAREA"][0]), neginf=-3)
+        X, Y = np.meshgrid(self.energy_center, self.migra_center)
         Z = self.data["MATRIX"][0][zenith_index]
 
-        # energy_true = self.axes["energy_true"]
-        # migra = self.axes["migra"]
-
-        # z = self.evaluate(
-        #     offset=offset,
-        #     energy_true=energy_true.center.reshape(1, -1, 1),
-        #     migra=migra.center.reshape(1, 1, -1),
-        # ).value[0]
+        vmin, vmax = np.nanmin(Z), np.nanmax(Z)
+        kwargs.setdefault("cmap", "RdPu")
+        kwargs.setdefault("edgecolors", "face")
+        kwargs.setdefault("shading", "auto")
+        kwargs.setdefault("vmin", vmin)
+        kwargs.setdefault("vmax", vmax)
 
         with quantity_support():
             caxes = ax.pcolormesh(X, Y, Z, **kwargs)
 
-        # energy_true.format_plot_xaxis(ax=ax)
-        # migra.format_plot_yaxis(ax=ax)
+        cos_zen = "{:.2f}".format(self.zenith[zenith_index])
+        patch = mpatches.Patch(
+            edgecolor="black",
+            facecolor=(0.28627450980392155, 0.0, 0.41568627450980394),
+            label=r"$ \cos(\theta)$=" + cos_zen,
+        )
+        ax.legend(handles=[patch], loc="lower left")
+        ax.axes.set_xlabel(f"log(E_true) [{self.head['TUNIT1']}]")
+        ax.axes.set_ylabel(r"Migra $\mu$")
 
-        # if add_cbar:
-        #     label = "Probability density [A.U]."
-        #     ax.figure.colorbar(caxes, ax=ax, label=label)
+        if add_cbar:
+            label = "Probability density [A.U.]"
+            ax.figure.colorbar(caxes, ax=ax, label=label)
 
         return ax
 
