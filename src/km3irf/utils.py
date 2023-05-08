@@ -311,6 +311,51 @@ class DrawEdisp:
             np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
         ) / 2.0
 
+    def plot_migration(self, ax=None, zenith_index=None, energy_index=None, **kwargs):
+        """Plot energy dispersion for given zenith and true energy.
+        Parameters
+        ----------
+        ax : `~matplotlib.axes.Axes`, optional
+            Axis
+        zenith_index : int, optional
+            index corresponds to item in zenith list
+        energy_index : List, optional
+            list of items in true energy axes
+        **kwargs : dict
+            Keyword arguments forwarded to `~matplotlib.pyplot.plot`
+        Returns
+        -------
+        ax : `~matplotlib.axes.Axes`
+            Axis
+        """
+        ax = plt.gca() if ax is None else ax
+
+        if zenith_index is None:
+            zenith_index = int(len(self.zenith) / 2)
+
+        if energy_index is None:
+            energy_index = [
+                0,
+                int(len(self.energy_center) / 2),
+                len(self.energy_center) - 1,
+            ]
+
+        pre_data = self.data["MATRIX"][0][zenith_index].T
+
+        with quantity_support():
+            for i in energy_index:
+                disp = pre_data[i]
+                label = (
+                    r"$\cos(\theta)$"
+                    + f"={self.zenith[zenith_index]:.2f}\nlog(E)={self.energy_center[i]:.2f}"
+                )
+                ax.plot(self.migra_center, disp, label=label, **kwargs)
+
+        ax.set_xlabel(r"Migra $\mu$")
+        ax.set_ylabel("Probability density")
+        ax.legend(loc="upper left")
+        return ax
+
     def plot_bias(self, ax=None, zenith_index=None, add_cbar=True, **kwargs):
         """Plot PDF as a function of true energy and migration for a given zenith.
         Parameters
@@ -372,7 +417,11 @@ class DrawEdisp:
         figsize : tuple
             Size of the figure.
         """
-        pass
+        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+        self.plot_bias(ax=axes[0])
+        self.plot_migration(ax=axes[1])
+        # self.plot_aeff(ax=axes[2])
+        plt.tight_layout()
 
 
 class DrawPSF:
