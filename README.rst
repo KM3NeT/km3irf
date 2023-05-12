@@ -10,6 +10,9 @@
 .. image:: https://git.km3net.de/km3py/km3irf/-/badges/release.svg
     :target: https://git.km3net.de/km3py/km3irf/-/releases
 
+.. image:: https://img.shields.io/badge/license-MIT-blueviolet
+    :target: https://opensource.org/licenses/MIT)
+
 KM3NeT instrument response function
 ====================================
 
