@@ -7,7 +7,7 @@ A set of functions which are necessary for calculation of IRF
 import numpy as np
 import pandas as pd
 import numba as nb
-from numba import jit, prange
+from numba import jit, njit, prange
 from km3pipe.math import azimuth, zenith
 import astropy.coordinates as ac
 from astropy.time import Time
@@ -74,9 +74,9 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
 
     """
 
-    if "theta_mc" not in dataset.keys():
+    if "theta_mc" not in dataset.columns:
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
-    if "migra" not in dataset.keys():
+    if "migra" not in dataset.columns:
         dataset["migra"] = dataset.E / dataset.E_mc
 
     theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
@@ -90,7 +90,8 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
     return edisp
 
 
-@jit(nopython=True, fastmath=False, parallel=True)
+# @jit(nopython=True, fastmath=False, parallel=True)
+@njit(fastmath=False, parallel=True)
 def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, weights):
     """
     numba accelerated helper function to fill the events into the energy disperaion matrix.
@@ -199,7 +200,7 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
 
     """
 
-    if "theta_mc" not in dataset.keys():
+    if "theta_mc" not in dataset:
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
 
     theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()

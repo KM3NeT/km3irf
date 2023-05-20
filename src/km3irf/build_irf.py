@@ -99,26 +99,21 @@ class DataContainer:
         weights[tag] *= len(self.df) / weights[tag].sum()
         return weights
 
-    @staticmethod
-    def merge_flavors(df_nu, df_nubar):
+    # @staticmethod
+    def merge_flavors(self, df_flavor):
         """
         Merge two data frames with differnt flavors in one.
 
         Parameters
         ----------
-        df_nu : pandas.DataFrame
-            data frame for 'nu'
-        df_nubar : pandas.DataFrame
-            data frame for 'nubar'
+        df_flavor : pandas.DataFrame
+            data frame with another flavor 'nu' or 'anu'
 
         Returns
         -------
-        pandas.DataFrame
-            merged pandas data frame
-
+        None
         """
-        df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
-        return df_merged
+        self.df = pd.concat([self.df, df_flavor], ignore_index=True)
 
     def build_aeff(
         self,
@@ -470,7 +465,7 @@ class WriteAeff:
             format="{}D".format(len(energy_binC) * len(theta_binC)),
             dim="({},{})".format(len(energy_binC), len(theta_binC)),
             unit="m2",
-            array=[aeff_T],
+            array=[aeff_T.T],
         )
 
     def to_fits(self, file_name):
@@ -514,7 +509,7 @@ class WritePSF:
         theta_binE,
         rad_binC,
         rad_binE,
-        psf_T,
+        psf,
     ):
         self.col1 = fits.Column(
             name="ENERG_LO",
@@ -557,7 +552,7 @@ class WritePSF:
             format="{}D".format(len(energy_binC) * len(theta_binC) * len(rad_binC)),
             dim="({},{},{})".format(len(energy_binC), len(theta_binC), len(rad_binC)),
             unit="sr-1",
-            array=[psf_T],
+            array=[psf],
         )
 
     def to_fits(self, file_name):
@@ -610,7 +605,7 @@ class WriteEdisp:
         t_bins_coarse,
         migra_binc,
         migra_bins,
-        edisp_T,
+        edisp,
     ):
         self.col1 = fits.Column(
             name="ENERG_LO",
@@ -654,7 +649,7 @@ class WriteEdisp:
             dim="({},{},{})".format(
                 len(e_binc_coarse), len(migra_binc), len(t_binc_coarse)
             ),
-            array=[edisp_T * np.diff(migra_bins)[:, None]],
+            array=[edisp * np.diff(migra_bins)[:, None]],
         )
 
     def to_fits(self, file_name):
