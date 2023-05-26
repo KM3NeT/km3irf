@@ -649,7 +649,7 @@ class WriteEdisp:
             dim="({},{},{})".format(
                 len(e_binc_coarse), len(migra_binc), len(t_binc_coarse)
             ),
-            array=[edisp * np.diff(migra_bins)[:, None]],
+            array=[edisp],
         )
 
     def to_fits(self, file_name):
