@@ -85,31 +85,31 @@ def merge_fits(
 
 
 def list_data(print_tab=False):
-    r"""
-    Return dictionary of .fits files with names and pathes in the data folder
+    """
+    Return dictionary of .fits files with names and paths in the data folder
 
     Parameters
     ----------
     print_tab : bool, default False
-        print in terminal a table with content of data folder
+        print in terminal a table with the content of the data folder
 
     Returns
     -------
     dict
         dictionary of files
     """
-    tab = PrettyTable(["File Path", "Size, KB"], align="l")
-    data_path = path.join(data_dir, "*.fits")
     info = {}
 
     clean_list = [i for i in listdir(data_dir) if ".fits" in i]
-    for file, i in zip(glob(data_path, recursive=True), clean_list):
-        if ".fits" in i:
-            tab.add_row([file, round(getsize(filename=file) / float(1 << 10), 2)])
-            info.update({i: file})
-    # show something
+    for file, i in zip(glob(path.join(data_dir, "*.fits"), recursive=True), clean_list):
+        info[i] = file
+
     if print_tab:
+        tab = PrettyTable(["File Path", "Size, KB"], align="l")
+        for i, file in info.items():
+            tab.add_row([file, round(getsize(filename=file) / float(1 << 10), 2)])
         print(tab)
+        return None
 
     return info
 
