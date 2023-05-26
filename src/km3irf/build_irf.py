@@ -419,16 +419,21 @@ def get_cut_mask(bdt0, bdt1, dir_z):
 
     """
 
+    dir_z_deg = np.arccos(dir_z) * 180 / np.pi
+
     mask_down = bdt0 >= 11  # remove downgoing events
     clear_signal = bdt0 == 12  # very clear signal
-    loose_up = (np.arccos(dir_z) * 180 / np.pi < 80) & (
-        bdt1 > 0.0
+    loose_up = np.bitwise_and(
+        dir_z_deg < 80, bdt1 > 0.0
     )  # apply loose cut on upgoing events
-    strong_horizontal = (np.arccos(dir_z) * 180 / np.pi > 80) & (
-        bdt1 > 0.7
+    strong_horizontal = np.bitwise_and(
+        dir_z_deg > 80, bdt1 > 0.7
     )  # apply strong cut on horizontal events
 
-    return mask_down & (clear_signal | loose_up | strong_horizontal)
+    return np.bitwise_and(
+        mask_down,
+        np.bitwise_or(clear_signal, np.bitwise_or(loose_up, strong_horizontal)),
+    )
 
 
 # Class for writing aeff_2D to fits files
