@@ -40,3 +40,7 @@ class TestDrawClasses(unittest.TestCase):
 
         with mpl_plot_check():
             self.aeff.plot_zenith_dependence()
+
+
+if __name__ == "__main__":
+    unittest.main()
