@@ -258,7 +258,7 @@ class DataContainer:
             theta_binE,
             rad_binC,
             rad_binE,
-            psf_T=psf,
+            psf=psf,
         )
         new_psf_file.to_fits(file_name=output)
 
@@ -347,7 +347,7 @@ class DataContainer:
             theta_binE,
             migra_binC,
             migra_binE,
-            edisp_T=edisp,
+            edisp=edisp,
         )
         new_edisp_file.to_fits(file_name=output)
 
