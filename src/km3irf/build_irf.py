@@ -371,7 +371,7 @@ def unpack_data(no_bdt, uproot_file):
 
     """
     # Access data arrays
-    data_uproot = dict()
+    data_uproot = {}
 
     E_evt = uproot_file["E/Evt"]
 
@@ -393,10 +393,7 @@ def unpack_data(no_bdt, uproot_file):
         data_uproot["bdt0"] = bdt[:, 0]
         data_uproot["bdt1"] = bdt[:, 1]
 
-    # create Data Frames
-    df_data = pd.DataFrame(data_uproot)
-
-    return df_data
+    return pd.DataFrame.from_dict(data_uproot)
 
 
 def get_cut_mask(bdt0, bdt1, dir_z):
