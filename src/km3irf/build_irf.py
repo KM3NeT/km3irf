@@ -180,6 +180,7 @@ class DataContainer:
         norm=False,
         smooth=True,
         smooth_norm=True,
+        weights=1,
         output="psf.fits",
     ):
         """
@@ -221,7 +222,7 @@ class DataContainer:
             r_bins=rad_binE,
             t_bins=theta_binE,
             dataset=self.df,
-            weights=1,
+            weights=weights,
         )
 
         # compute dP/dOmega
@@ -272,6 +273,7 @@ class DataContainer:
         norm=False,
         smooth=True,
         smooth_norm=True,
+        weights=1,
         output="edisp.fits",
     ):
         """
@@ -312,7 +314,7 @@ class DataContainer:
             m_bins=migra_binE,
             t_bins=theta_binE,
             dataset=self.df,
-            weights=1,
+            weights=weights,
         )
 
         sizes_migra_binE = np.diff(migra_binE)
