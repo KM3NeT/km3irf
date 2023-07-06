@@ -408,7 +408,7 @@ class DrawEdisp:
 
         return ax
 
-    def peek(self, figsize=(15, 4)):
+    def peek(self, figsize=(11, 4)):
         """Quick-look summary plots for Edisp.
 
         Parameters
@@ -416,7 +416,7 @@ class DrawEdisp:
         figsize : tuple
             Size of the figure.
         """
-        fig, axes = plt.subplots(nrows=1, ncols=3, figsize=figsize)
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=figsize)
         self.plot_bias(ax=axes[0])
         self.plot_migration(ax=axes[1])
         # self.plot_aeff(ax=axes[2])
