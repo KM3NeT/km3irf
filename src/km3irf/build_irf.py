@@ -27,6 +27,7 @@ from scipy.ndimage import gaussian_filter1d, gaussian_filter
 from .utils import data_dir
 from os import path
 
+
 # from collections import defaultdict
 
 # import sys
@@ -38,8 +39,7 @@ from os import path
 
 
 class DataContainer:
-    """
-    General class, which allows operating with IRF components such as:
+    """General class, which allows operating with IRF components such as:
     Effective area (aeff), Point spread function (psf), Energy dispersion (edisp).
 
     Attributes
@@ -48,7 +48,6 @@ class DataContainer:
         input dst.root file with data
     no_bdt : bool
         with/out bdt information in input file
-
     """
 
     def __init__(self, infile, no_bdt=False):
@@ -56,23 +55,19 @@ class DataContainer:
         self.f_uproot = ur.open(infile)
         self.df = unpack_data(no_bdt, self.f_uproot)
 
-    @property
     def apply_cuts(self):
-        """
-        Apply cuts to the created data frame.
+        """Apply cuts to the created data frame.
 
         Returns
         -------
         None
-
         """
         mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
         self.df = self.df[mask].copy()
         return None
 
     def weight_calc(self, tag, weight_factor=-2.5):
-        r"""
-        Calculate the normalized weight factor for each event.
+        r"""Calculate the normalized weight factor for each event.
 
         Parameters
         ----------
@@ -84,7 +79,6 @@ class DataContainer:
         Returns
         -------
         weights : Array
-
         """
         try:
             alpha_value = self.f_km3io.header.spectrum.alpha
@@ -99,8 +93,7 @@ class DataContainer:
         return weights
 
     def merge_flavors(self, df_flavor):
-        """
-        Merge two data frames with differnt flavors in one.
+        """Merge two data frames with differnt flavors in one.
 
         Parameters
         ----------
@@ -120,8 +113,7 @@ class DataContainer:
         energy_binE=None,
         output="aeff.fits",
     ):
-        """
-        Build Effective Area 2D .fits file.
+        """Build Effective Area 2D .fits file.
 
         Parameters
         ----------
@@ -137,7 +129,6 @@ class DataContainer:
         Returns
         -------
         None
-
         """
 
         if cos_theta_binE == None:
@@ -181,8 +172,7 @@ class DataContainer:
         weights=1,
         output="psf.fits",
     ):
-        """
-        Build Point Spread Function 3D .fits file.
+        """Build Point Spread Function 3D .fits file.
 
         Parameters
         ----------
@@ -208,7 +198,6 @@ class DataContainer:
         Returns
         -------
         None
-
         """
 
         if cos_theta_binE == None:
@@ -293,8 +282,7 @@ class DataContainer:
         weights=1,
         output="edisp.fits",
     ):
-        """
-        Build Energy dispertion 3D .fits file.
+        """Build Energy dispertion 3D .fits file.
 
         Parameters
         ----------
@@ -319,7 +307,6 @@ class DataContainer:
         Returns
         -------
         None
-
         """
         if cos_theta_binE == None:
             cos_theta_binE = np.linspace(1, -1, 7)
@@ -385,8 +372,7 @@ class DataContainer:
 
 
 def unpack_data(no_bdt, uproot_file):
-    """
-    Retrieve information from data file and pack it to pandas.DataFrame.
+    """Retrieve information from data file and pack it to pandas.DataFrame.
 
     Parameters
     ----------
@@ -398,7 +384,6 @@ def unpack_data(no_bdt, uproot_file):
     Returns
     -------
     pandas.DataFrame
-
     """
     # Access data arrays
     data_uproot = {}
@@ -427,8 +412,7 @@ def unpack_data(no_bdt, uproot_file):
 
 
 def get_cut_mask(bdt0, bdt1, dir_z):
-    """
-    Create a cut mask for chosen cuts
+    """Create a cut mask for chosen cuts
 
     Parameters
     ----------
@@ -443,7 +427,6 @@ def get_cut_mask(bdt0, bdt1, dir_z):
     Returns
     -------
     Array(bool)
-
     """
 
     dir_z_deg = np.arccos(dir_z) * 180 / np.pi
@@ -501,14 +484,12 @@ class WriteAeff:
         )
 
     def to_fits(self, file_name):
-        """
-        Write Aeff to .fits file.
+        """Write Aeff to .fits file.
 
         Parameters
         ----------
         file_name : str
             should have .fits extension
-
         """
         cols = fits.ColDefs([self.col1, self.col2, self.col3, self.col4, self.col5])
         hdu = fits.PrimaryHDU()
@@ -588,8 +569,7 @@ class WritePSF:
         )
 
     def to_fits(self, file_name):
-        """
-        Write PSF to .fits file.
+        """Write PSF to .fits file.
 
         Parameters
         ----------
@@ -685,8 +665,7 @@ class WriteEdisp:
         )
 
     def to_fits(self, file_name):
-        """
-        Write Edisp to .fits file.
+        """Write Edisp to .fits file.
 
         Parameters
         ----------

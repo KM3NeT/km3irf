@@ -29,8 +29,7 @@ def merge_fits(
     output_path=data_dir,
     output_file="all_in_one.fits",
 ):
-    r"""
-    Merge separated .fits files into one, which can be used in gammapy
+    r"""Merge separated .fits files into one, which can be used in gammapy
 
     Parameters
     ----------
@@ -276,8 +275,7 @@ class DrawAeff:
         return ax
 
     def peek(self, figsize=(15, 4)):
-        """
-        Quick-look summary plots for Aeff.
+        """Quick-look summary plots for Aeff.
 
         Parameters
         ----------
@@ -313,6 +311,7 @@ class DrawEdisp:
 
     def plot_migration(self, ax=None, zenith_index=None, energy_index=None, **kwargs):
         """Plot energy dispersion for given zenith and true energy.
+
         Parameters
         ----------
         ax : `~matplotlib.axes.Axes`, optional
@@ -358,6 +357,7 @@ class DrawEdisp:
 
     def plot_bias(self, ax=None, zenith_index=None, add_cbar=True, **kwargs):
         """Plot PDF as a function of true energy and migration for a given zenith.
+
         Parameters
         ----------
         ax : `~matplotlib.axes.Axes`, optional
@@ -409,8 +409,7 @@ class DrawEdisp:
         return ax
 
     def peek(self, figsize=(15, 4)):
-        """
-        Quick-look summary plots for Edisp.
+        """Quick-look summary plots for Edisp.
 
         Parameters
         ----------
@@ -431,8 +430,7 @@ class DrawPSF:
         pass
 
     def peek(self, figsize=(15, 4)):
-        """
-        Quick-look summary plots for PSF.
+        """Quick-look summary plots for PSF.
 
         Parameters
         ----------

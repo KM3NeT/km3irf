@@ -15,7 +15,7 @@ class TestBuild_IRF(unittest.TestCase):
         self.init_data = build_irf.DataContainer(no_bdt=False, infile=self.testdata)
 
     def test_apply_cuts(self):
-        self.init_data.apply_cuts
+        self.init_data.apply_cuts()
         assert self.init_data.df.shape[0] != None
 
     def test_unpack_data(self):
