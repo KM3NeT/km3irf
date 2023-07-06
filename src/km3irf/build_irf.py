@@ -56,6 +56,7 @@ class DataContainer:
         self.f_uproot = ur.open(infile)
         self.df = unpack_data(no_bdt, self.f_uproot)
 
+    @property
     def apply_cuts(self):
         """
         Apply cuts to the created data frame.
@@ -68,8 +69,6 @@ class DataContainer:
         mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
         self.df = self.df[mask].copy()
         return None
-        # df_cut = self.df[mask].copy()
-        # return df_cut
 
     def weight_calc(self, tag, weight_factor=-2.5):
         r"""
@@ -94,12 +93,11 @@ class DataContainer:
             print("your input data file has no header, alpha_value set to default -1.4")
             alpha_value = -1.4
 
-        weights = dict()
+        weights = {}
         weights[tag] = (self.df.E_mc ** (weight_factor - alpha_value)).to_numpy()
         weights[tag] *= len(self.df) / weights[tag].sum()
         return weights
 
-    # @staticmethod
     def merge_flavors(self, df_flavor):
         """
         Merge two data frames with differnt flavors in one.
@@ -118,8 +116,8 @@ class DataContainer:
     def build_aeff(
         self,
         weight_factor=-2.5,
-        cos_theta_binE=np.linspace(1, -1, 13),
-        energy_binE=np.logspace(2, 8, 49),
+        cos_theta_binE=None,
+        energy_binE=None,
         output="aeff.fits",
     ):
         """
@@ -141,6 +139,13 @@ class DataContainer:
         None
 
         """
+
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 13)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 49)
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
@@ -167,16 +172,9 @@ class DataContainer:
 
     def build_psf(
         self,
-        cos_theta_binE=np.linspace(1, -1, 7),
-        energy_binE=np.logspace(2, 8, 25),
-        rad_binE=np.concatenate(
-            (
-                np.linspace(0, 1, 20, endpoint=False),
-                np.linspace(1, 5, 40, endpoint=False),
-                np.linspace(5, 30, 51),
-                [180.0],
-            )
-        ),
+        cos_theta_binE=None,
+        energy_binE=None,
+        rad_binE=None,
         norm=False,
         smooth=True,
         smooth_norm=True,
@@ -193,7 +191,7 @@ class DataContainer:
         energy_binE : Array, default np.logspace(2, 8, 25)
             log numpy array of enegy bins
         rad_binE : Array
-            of linear radial bins (20 bins for 0-1 deg, 40 bins for 1-5 deg,
+            of linear radial bins, default (20 bins for 0-1 deg, 40 bins for 1-5 deg,
             50 bins for 5-30 deg, + 1 final bin up to 180 deg)
         norm : bool, default False
             enable or disable normalization
@@ -202,6 +200,8 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
+        weights : Array, default 1
+            weights can be calculated using weight_calc
         output : str, default "psf.fits"
             name of generated PSF file with extension .fits
 
@@ -210,6 +210,23 @@ class DataContainer:
         None
 
         """
+
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 7)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 25)
+
+        if rad_binE == None:
+            rad_binE = np.concatenate(
+                (
+                    np.linspace(0, 1, 20, endpoint=False),
+                    np.linspace(1, 5, 40, endpoint=False),
+                    np.linspace(5, 30, 51),
+                    [180.0],
+                )
+            )
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
@@ -267,9 +284,9 @@ class DataContainer:
 
     def build_edisp(
         self,
-        cos_theta_binE=np.linspace(1, -1, 7),
-        energy_binE=np.logspace(2, 8, 25),
-        migra_binE=np.logspace(-5, 2, 57),
+        cos_theta_binE=None,
+        energy_binE=None,
+        migra_binE=None,
         norm=False,
         smooth=True,
         smooth_norm=True,
@@ -294,6 +311,8 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
+        weights : Array, default 1
+            weights can be calculated using weight_calc
         output : str, default "edisp.fits"
             name of generated Edisp file with extension .fits
 
@@ -302,6 +321,15 @@ class DataContainer:
         None
 
         """
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 7)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 25)
+
+        if migra_binE == None:
+            migra_binE = np.logspace(-5, 2, 57)
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
