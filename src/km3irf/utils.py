@@ -426,8 +426,22 @@ class DrawEdisp:
 class DrawPSF:
     """Class is responsible for production of PSF plots."""
 
-    def __init__(self):
-        pass
+    np.seterr(divide="ignore")
+
+    def __init__(self, edisp_path=path.join(data_dir, "edisp.fits")):
+        self.edisp_path = edisp_path
+        with fits.open(self.edisp_path) as hdul:
+            self.data = hdul[1].data
+            self.head = hdul[1].header
+
+        self.energy_center = np.log10(
+            (self.data["ENERG_HI"][0] + self.data["ENERG_LO"][0]) / 2.0
+        )
+        self.rad_center = (self.data["RAD_HI"][0] + self.data["RAD_LO"][0]) / 2.0
+
+        self.zenith = (
+            np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
+        ) / 2.0
 
     def peek(self, figsize=(15, 4)):
         """Quick-look summary plots for PSF.
