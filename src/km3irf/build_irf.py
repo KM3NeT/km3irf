@@ -169,7 +169,7 @@ class DataContainer:
         norm=False,
         smooth=True,
         smooth_norm=True,
-        weights=1,
+        weights=None,
         output="psf.fits",
     ):
         """Build Point Spread Function 3D .fits file.
@@ -190,7 +190,7 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
-        weights : Array, default 1
+        weights : Array, default None
             weights can be calculated using weight_calc
         output : str, default "psf.fits"
             name of generated PSF file with extension .fits
@@ -222,6 +222,8 @@ class DataContainer:
         theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
         rad_binC = 0.5 * (rad_binE[1:] + rad_binE[:-1])
 
+        if weights is None:
+            weights = np.ones(len(self.df), dtype=np.float64)
         # Fill histogram for PSF
         psf = psf_3D(
             e_bins=energy_binE,

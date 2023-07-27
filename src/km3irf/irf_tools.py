@@ -110,7 +110,7 @@ def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, w
     return edisp
 
 
-def psf_3D(e_bins, r_bins, t_bins, dataset, weights=None):
+def psf_3D(e_bins, r_bins, t_bins, dataset, weights):
     """
     Calculate the 3-dimensional PSF matrix.
     This is a historgram with the simulated evenets.
@@ -151,9 +151,6 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=None):
     energy_bins = np.searchsorted(e_bins, dataset.E_mc) - 1
     rad_bins = np.searchsorted(r_bins, rad) - 1
 
-    if weights is None:
-        weights = np.ones(len(energy_bins), dtype=np.float64)
-
     psf = fill_psf_3D(
         e_bins,
         r_bins,
@@ -168,7 +165,15 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=None):
 
 
 @njit(fastmath=True, parallel=True)
-def fill_psf_3D(e_bins, r_bins, t_bins, energy_bins, rad_bins, theta_bins, weights):
+def fill_psf_3D(
+    e_bins,
+    r_bins,
+    t_bins,
+    energy_bins,
+    rad_bins,
+    theta_bins,
+    weights,
+):
     """
     numba accelerated helper function to calculate point spread function.
 
@@ -176,14 +181,9 @@ def fill_psf_3D(e_bins, r_bins, t_bins, energy_bins, rad_bins, theta_bins, weigh
     num_e_bins = len(e_bins) - 1
     num_r_bins = len(r_bins) - 1
     num_t_bins = len(t_bins) - 1
-    hist = np.zeros((num_r_bins, num_t_bins, num_e_bins), dtype=float64)
+    hist = np.zeros((num_r_bins, num_t_bins, num_e_bins), dtype=np.float64)
 
     num_events = len(energy_bins)
-    if weights is None:
-        weights = np.ones(num_events, dtype=float64)
-    else:
-        weights = np.array(weights, dtype=np.float64)
-
     for i in range(num_events):
         e_idx = energy_bins[i]
         r_idx = rad_bins[i]
