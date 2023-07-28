@@ -256,7 +256,12 @@ class DataContainer:
                 norm_psf_sm = (
                     psf * sizes_rad_binE[:, None, None] * (np.pi / 180) ** 2 * np.pi
                 ).sum(axis=0, keepdims=True)
-                psf = np.nan_to_num(psf / norm_psf_sm)
+
+                if np.any(norm_psf_sm == 0):
+                    print("Warning: Norm PSF sum is zero. Skipping normalization.")
+                else:
+                    psf = np.nan_to_num(psf / norm_psf_sm)
+
         elif smooth and norm:
             raise Exception("smooth and norm cannot be True at the same time")
 
@@ -358,7 +363,11 @@ class DataContainer:
             edisp /= sizes_migra_binE[:, None]
             if smooth_norm:
                 m_normed = edisp * sizes_migra_binE[:, np.newaxis]
-                edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
+
+                if np.any(m_normed.sum(axis=1, keepdims=True) == 0):
+                    print("Warning: Zero Division.")
+                else:
+                    edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
         elif smooth and norm:
             raise Exception("smooth and norm cannot be True at the same time")
 

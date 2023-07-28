@@ -90,20 +90,12 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights):
     return edisp
 
 
-# @jit(nopython=True, fastmath=False, parallel=True)
-@njit(fastmath=False, parallel=True)
+@njit(fastmath=True, parallel=True)
 def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, weights):
     """
     numba accelerated helper function to fill the events into the energy disperaion matrix.
 
     """
-
-    # edisp = np.zeros((len(t_bins) - 1, len(m_bins) - 1, len(e_bins) - 1))
-    # for i in prange(len(t_bins) - 1):
-    #     for j in range(len(m_bins) - 1):
-    #         for k in range(len(e_bins) - 1):
-    #             mask = (energy_bins == k) & (migra_bins == j) & (theta_bins == i)
-    #             edisp[i, j, k] = np.sum(mask * weights)
 
     num_t_bins = len(t_bins) - 1
     num_m_bins = len(m_bins) - 1
@@ -112,7 +104,7 @@ def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, w
     hist = np.zeros((num_t_bins, num_m_bins, num_e_bins), dtype=np.float64)
 
     num_events = len(energy_bins)
-    for i in range(num_events):
+    for i in prange(num_events):
         t_idx = theta_bins[i]
         m_idx = migra_bins[i]
         e_idx = energy_bins[i]
@@ -200,7 +192,7 @@ def fill_psf_3D(
     hist = np.zeros((num_r_bins, num_t_bins, num_e_bins), dtype=np.float64)
 
     num_events = len(energy_bins)
-    for i in range(num_events):
+    for i in prange(num_events):
         e_idx = energy_bins[i]
         r_idx = rad_bins[i]
         t_idx = theta_bins[i]
