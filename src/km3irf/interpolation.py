@@ -46,7 +46,6 @@ class ScaledRegularGridInterpolator:
         axis=None,
         **kwargs,
     ):
-
         if points_scale is None:
             points_scale = ["lin"] * len(points)
 
