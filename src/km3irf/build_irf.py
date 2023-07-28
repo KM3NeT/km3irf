@@ -281,7 +281,7 @@ class DataContainer:
         norm=False,
         smooth=True,
         smooth_norm=True,
-        weights=1,
+        weights=None,
         output="edisp.fits",
     ):
         """Build Energy dispertion 3D .fits file.
@@ -301,7 +301,7 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
-        weights : Array, default 1
+        weights : Array, default None
             weights can be calculated using weight_calc
         output : str, default "edisp.fits"
             name of generated Edisp file with extension .fits
@@ -324,6 +324,9 @@ class DataContainer:
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
         theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
         migra_binC = np.sqrt(migra_binE[:-1] * migra_binE[1:])
+
+        if weights is None:
+            weights = np.ones(len(self.df), dtype=np.float64)
 
         # fill histogram for Edisp
         edisp = edisp_3D(
