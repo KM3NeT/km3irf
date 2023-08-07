@@ -428,9 +428,9 @@ class DrawPSF:
 
     np.seterr(divide="ignore")
 
-    def __init__(self, edisp_path=path.join(data_dir, "edisp.fits")):
-        self.edisp_path = edisp_path
-        with fits.open(self.edisp_path) as hdul:
+    def __init__(self, psf_path=path.join(data_dir, "psf.fits")):
+        self.psf_path = psf_path
+        with fits.open(self.psf_path) as hdul:
             self.data = hdul[1].data
             self.head = hdul[1].header
 
@@ -442,6 +442,38 @@ class DrawPSF:
         self.zenith = (
             np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
         ) / 2.0
+
+    def plot_psf_vs_rad(self, ax=None, **kwargs):
+        """Plot PSF vs rad.
+
+        Parameters
+        ----------
+        ax : ``
+
+        kwargs : dict
+            Keyword arguments passed to `matplotlib.pyplot.plot`
+        """
+
+        ax = plt.gca() if ax is None else ax
+
+        bin_edges = np.append(self.data["RAD_LO"][0], self.data["RAD_HI"][0][-1])
+
+        kwargs.setdefault("edgecolor", "black")
+        kwargs.setdefault("color", "red")
+
+        with quantity_support():
+            ax.hist(
+                self.rad_center,
+                bins=bin_edges,
+                weights=np.sum(self.data["RPSF"][0], axis=(1, 2)),
+                **kwargs,
+            )
+        ax.set_yscale("log")
+        ax.set_xscale("log")
+        ax.set_xlabel(f"Rad [{self.head['TUNIT5']}]")
+        ax.set_ylabel(f"PSF [{self.head['TUNIT7']}]")
+
+        return ax
 
     def peek(self, figsize=(15, 4)):
         """Quick-look summary plots for PSF.
