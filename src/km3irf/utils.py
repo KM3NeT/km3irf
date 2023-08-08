@@ -11,11 +11,13 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from astropy.io import fits
 from astropy.visualization import quantity_support
+import astropy.units as u
 from os import path, listdir
 from glob import glob
 from os.path import getsize
 from prettytable import PrettyTable
 from importlib_resources import files
+from .interpolation import ScaledRegularGridInterpolator
 
 
 data_dir = path.join(path.dirname(__file__), "data")
@@ -435,13 +437,63 @@ class DrawPSF:
             self.head = hdul[1].header
 
         self.energy_center = np.log10(
-            (self.data["ENERG_HI"][0] + self.data["ENERG_LO"][0]) / 2.0
+            (self.data["ENERG_LO"][0] + self.data["ENERG_HI"][0]) / 2.0
+        )
+        self.energy_logcenter = np.sqrt(
+            self.data["ENERG_LO"][0] * self.data["ENERG_HI"][0]
         )
         self.rad_center = (self.data["RAD_HI"][0] + self.data["RAD_LO"][0]) / 2.0
 
         self.zenith = (
             np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
         ) / 2.0
+
+    def interpolate(self):
+        energy = self.energy_logcenter
+        zenith = np.arccos(self.zenith)
+        rad = self.rad_center
+
+        return ScaledRegularGridInterpolator(
+            points=(rad, zenith, energy), values=self.data["RPSF"][0]
+        )
+
+    def evaluate(self, energy=None, zenith=None, rad=None):
+        """Interpolate PSF value at a given zenith and energy.
+
+        Parameters
+        ----------
+        energy : `~astropy.units.Quantity`
+            energy value
+        zenith : `~astropy.coordinates.Angle`
+            Offset in the field of view
+        rad : `~astropy.coordinates.Angle`
+            Offset wrt source position
+
+        Returns
+        -------
+        values : `~astropy.units.Quantity`
+            Interpolated value
+        """
+        if energy is None:
+            energy = self.energy_logcenter
+        if zenith is None:
+            zenith = np.arccos(self.zenith)
+        if rad is None:
+            rad = self.rad_center
+
+        rad = np.atleast_1d(rad)
+        zenith = np.atleast_1d(zenith)
+        energy = np.atleast_1d(energy)
+
+        interpolator = self.interpolate()
+
+        return interpolator(
+            (
+                rad[:, np.newaxis, np.newaxis],
+                zenith[np.newaxis, :, np.newaxis],
+                energy[np.newaxis, np.newaxis, :],
+            )
+        )
 
     def plot_psf_vs_rad(self, ax=None, **kwargs):
         """Plot PSF vs rad.
