@@ -18,6 +18,7 @@ from os.path import getsize
 from prettytable import PrettyTable
 from importlib_resources import files
 from .interpolation import ScaledRegularGridInterpolator
+import scipy as sp
 
 
 data_dir = path.join(path.dirname(__file__), "data")
@@ -448,7 +449,14 @@ class DrawPSF:
             np.cos(self.data["THETA_HI"][0]) + np.cos(self.data["THETA_LO"][0])
         ) / 2.0
 
-    def interpolate(self):
+    def interpolate_1d(self):
+        values = self.to_psf1D(
+            energy=self.energy_logcenter, zenith=np.arccos(self.zenith)
+        )
+        points = self.rad_center
+        return ScaledRegularGridInterpolator(points=points, values=values)
+
+    def interpolate_3d(self):
         energy = self.energy_logcenter
         zenith = np.arccos(self.zenith)
         rad = self.rad_center
@@ -457,7 +465,35 @@ class DrawPSF:
             points=(rad, zenith, energy), values=self.data["RPSF"][0]
         )
 
-    def evaluate(self, energy=None, zenith=None, rad=None):
+    def evaluate_1d(self, rad=None):
+        r"""Evaluate PSF.
+
+        The following PSF quantities are available:
+
+        * 'dp_domega': PDF per 2-dim solid angle :math:`\Omega` in sr^-1
+
+            .. math:: \frac{dP}{d\Omega}
+
+
+        Parameters
+        ----------
+        rad : `~astropy.coordinates.Angle`
+            Offset wrt source position
+
+        Returns
+        -------
+        psf_value : `~astropy.units.Quantity`
+            PSF value
+        """
+        if rad is None:
+            rad = self.rad_center
+
+        rad = np.atleast_1d(rad)
+
+        interpolator = self.interpolate_1d()
+        return interpolator((rad,))
+
+    def evaluate_3d(self, energy=None, zenith=None, rad=None):
         """Interpolate PSF value at a given zenith and energy.
 
         Parameters
@@ -485,7 +521,7 @@ class DrawPSF:
         zenith = np.atleast_1d(zenith)
         energy = np.atleast_1d(energy)
 
-        interpolator = self.interpolate()
+        interpolator = self.interpolate_3d()
 
         return interpolator(
             (
@@ -494,6 +530,41 @@ class DrawPSF:
                 energy[np.newaxis, np.newaxis, :],
             )
         )
+
+    def interpolate_containment(self):
+        if self.rad_center[0] > 0:
+            rad = np.insert(self.rad_center, 0, 0)
+        else:
+            rad = self.rad_center
+
+        rad_drad = 2 * np.pi * rad * self.evaluate_1d(rad)
+        # values = sp.integrate.cumtrapz(
+        #     rad_drad.to_value("rad-1"), rad.to_value("rad"), initial=0
+        # )
+        values = sp.integrate.cumtrapz(rad_drad, rad, initial=0)
+
+        return ScaledRegularGridInterpolator(points=(rad,), values=values, fill_value=1)
+
+    def to_psf1D(self, energy, zenith):
+        """Create `~gammapy.irf.TablePSF` at one given energy.
+
+        Parameters
+        ----------
+        energy : `~astropy.units.Quantity`
+            Energy
+        theta : `~astropy.coordinates.Angle`
+            Offset in the field of view. Default theta = 0 deg
+
+        Returns
+        -------
+        psf : `~gammapy.irf.TablePSF`
+            Table PSF
+        """
+        # energy = u.Quantity(energy)
+        # theta = Angle(theta)
+        psf_value = self.evaluate_3d(energy, zenith).squeeze()
+        # rad = self.rad_center
+        return psf_value
 
     def plot_psf_vs_rad(self, ax=None, **kwargs):
         """Plot PSF vs rad.
