@@ -6,6 +6,7 @@ from astropy.io import fits
 from astropy.table import Table
 from astropy.utils import lazyproperty
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 # from gammapy.maps import MapAxis
 # from gammapy.utils.array import array_stats_str
@@ -319,13 +320,19 @@ class PSF3D:
         self, fractions=[0.68, 0.95], thetas=Angle([0, 1], "deg"), ax=None
     ):
         """Plot containment fraction as a function of energy."""
-        import matplotlib.pyplot as plt
 
         ax = plt.gca() if ax is None else ax
 
-        energy = MapAxis.from_energy_bounds(
-            self.energy_lo[0], self.energy_hi[-1], 100
-        ).edges
+        # energy = MapAxis.from_energy_bounds(
+        #     self.energy_lo[0], self.energy_hi[-1], 100
+        # ).edges
+
+        energy = (
+            np.logspace(
+                np.log10(self.energy_lo[0].value), np.log10(self.energy_hi[-1]), 101
+            )
+            * self.energy_lo.unit
+        )
 
         for theta in thetas:
             for fraction in fractions:
