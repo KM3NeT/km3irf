@@ -7,6 +7,7 @@ from astropy.table import Table
 from astropy.utils import lazyproperty
 from pathlib import Path
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 
 # from gammapy.maps import MapAxis
 # from gammapy.utils.array import array_stats_str
@@ -51,8 +52,8 @@ class PSF3D:
         rad_lo,
         rad_hi,
         psf_value,
-        energy_thresh_lo=u.Quantity(0.1, "TeV"),
-        energy_thresh_hi=u.Quantity(100, "TeV"),
+        # energy_thresh_lo=u.Quantity(0.1, "TeV"),
+        # energy_thresh_hi=u.Quantity(100, "TeV"),
         interp_kwargs=None,
     ):
         self.energy_lo = energy_lo.to("TeV")
@@ -61,8 +62,8 @@ class PSF3D:
         self.rad_lo = Angle(rad_lo)
         self.rad_hi = Angle(rad_hi)
         self.psf_value = psf_value.to("sr^-1")
-        self.energy_thresh_lo = energy_thresh_lo.to("TeV")
-        self.energy_thresh_hi = energy_thresh_hi.to("TeV")
+        # self.energy_thresh_lo = energy_thresh_lo.to("TeV")
+        # self.energy_thresh_hi = energy_thresh_hi.to("TeV")
 
         self._interp_kwargs = interp_kwargs or {}
 
@@ -119,36 +120,36 @@ class PSF3D:
         table = Table.read(Path(path_to_file), hdu=hdu)
         return cls.from_table(table)
 
-    # @classmethod
-    # def from_table(cls, table):
-    #     """Create `PSF3D` from `~astropy.table.Table`.
+    @classmethod
+    def from_table(cls, table):
+        """Create `PSF3D` from `~astropy.table.Table`.
 
-    #     Parameters
-    #     ----------
-    #     table : `~astropy.table.Table`
-    #         Table Table-PSF info.
-    #     """
-    #     theta_lo = table["THETA_LO"].quantity[0]
-    #     theta_hi = table["THETA_HI"].quantity[0]
-    #     offset = (theta_hi + theta_lo) / 2
-    #     offset = Angle(offset, unit=table["THETA_LO"].unit)
+        Parameters
+        ----------
+        table : `~astropy.table.Table`
+            Table Table-PSF info.
+        """
+        theta_lo = table["THETA_LO"].quantity[0]
+        theta_hi = table["THETA_HI"].quantity[0]
+        offset = (theta_hi + theta_lo) / 2
+        offset = Angle(offset, unit=table["THETA_LO"].unit)
 
-    #     energy_lo = table["ENERG_LO"].quantity[0]
-    #     energy_hi = table["ENERG_HI"].quantity[0]
+        energy_lo = table["ENERG_LO"].quantity[0]
+        energy_hi = table["ENERG_HI"].quantity[0]
 
-    #     rad_lo = table["RAD_LO"].quantity[0]
-    #     rad_hi = table["RAD_HI"].quantity[0]
+        rad_lo = table["RAD_LO"].quantity[0]
+        rad_hi = table["RAD_HI"].quantity[0]
 
-    #     psf_value = table["RPSF"].quantity[0]
+        psf_value = table["RPSF"].quantity[0]
 
-    #     opts = {}
-    #     try:
-    #         opts["energy_thresh_lo"] = u.Quantity(table.meta["LO_THRES"], "TeV")
-    #         opts["energy_thresh_hi"] = u.Quantity(table.meta["HI_THRES"], "TeV")
-    #     except KeyError:
-    #         pass
+        opts = {}
+        # try:
+        #     opts["energy_thresh_lo"] = u.Quantity(table.meta["LO_THRES"], "TeV")
+        #     opts["energy_thresh_hi"] = u.Quantity(table.meta["HI_THRES"], "TeV")
+        # except KeyError:
+        #     pass
 
-    #     return cls(energy_lo, energy_hi, offset, rad_lo, rad_hi, psf_value, **opts)
+        return cls(energy_lo, energy_hi, offset, rad_lo, rad_hi, psf_value, **opts)
 
     def to_fits(self):
         """
@@ -317,7 +318,7 @@ class PSF3D:
         return u.Quantity(radii).T.squeeze()
 
     def plot_containment_vs_energy(
-        self, fractions=[0.68, 0.95], thetas=Angle([0, 1], "deg"), ax=None
+        self, fractions=[0.68, 0.95], thetas=Angle([90, 120], "deg"), ax=None
     ):
         """Plot containment fraction as a function of energy."""
 
@@ -329,7 +330,9 @@ class PSF3D:
 
         energy = (
             np.logspace(
-                np.log10(self.energy_lo[0].value), np.log10(self.energy_hi[-1]), 101
+                np.log10(self.energy_lo[0].value),
+                np.log10(self.energy_hi[-1].value),
+                101,
             )
             * self.energy_lo.unit
         )
@@ -384,13 +387,20 @@ class PSF3D:
 
         # plotting defaults
         kwargs.setdefault("cmap", "GnBu")
-        kwargs.setdefault("vmin", np.nanmin(containment.value))
-        kwargs.setdefault("vmax", np.nanmax(containment.value))
+        # kwargs.setdefault("vmin", np.nanmin(containment.value))
+        # kwargs.setdefault("vmax", np.nanmax(containment.value))
+        kwargs.setdefault(
+            "norm",
+            Normalize(
+                vmin=np.nanmin(containment.value), vmax=np.nanmax(containment.value)
+            ),
+        )
 
         # Plotting
         x = energy.value
         y = offset.value
-        caxes = ax.pcolormesh(x, y, containment.value.T, **kwargs)
+        # caxes = ax.pcolormesh(x, y, containment.value.T, **kwargs)
+        caxes = ax.pcolormesh(x, y, containment.value.T, shading="auto", **kwargs)
 
         # Axes labels and ticks, colobar
         ax.semilogx()

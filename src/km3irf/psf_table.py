@@ -1,20 +1,24 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import logging
+# import logging
 import numpy as np
 import scipy.integrate
 from astropy import units as u
 from astropy.coordinates import Angle
 from astropy.io import fits
 from astropy.utils import lazyproperty
-from gammapy.maps import MapAxis
-from gammapy.utils.array import array_stats_str
-from gammapy.utils.gauss import Gauss2DPDF
-from gammapy.utils.interpolation import ScaledRegularGridInterpolator
-from gammapy.utils.scripts import make_path
+
+# from gammapy.maps import MapAxis
+# from gammapy.utils.array import array_stats_str
+# from gammapy.utils.gauss import Gauss2DPDF
+from .interpolation import ScaledRegularGridInterpolator
+
+# from gammapy.utils.scripts import make_path
+
+from pathlib import Path
 
 __all__ = ["TablePSF", "EnergyDependentTablePSF"]
 
-log = logging.getLogger(__name__)
+# log = logging.getLogger(__name__)
 
 
 class TablePSF:
@@ -57,60 +61,60 @@ class TablePSF:
 
         return ScaledRegularGridInterpolator(points=(rad,), values=values, fill_value=1)
 
-    @classmethod
-    def from_shape(cls, shape, width, rad):
-        """Make TablePSF objects with commonly used shapes.
+    # @classmethod
+    # def from_shape(cls, shape, width, rad):
+    #     """Make TablePSF objects with commonly used shapes.
 
-        This function is mostly useful for examples and testing.
+    #     This function is mostly useful for examples and testing.
 
-        Parameters
-        ----------
-        shape : {'disk', 'gauss'}
-            PSF shape.
-        width : `~astropy.units.Quantity` with angle units
-            PSF width angle (radius for disk, sigma for Gauss).
-        rad : `~astropy.units.Quantity` with angle units
-            Offset angle
+    #     Parameters
+    #     ----------
+    #     shape : {'disk', 'gauss'}
+    #         PSF shape.
+    #     width : `~astropy.units.Quantity` with angle units
+    #         PSF width angle (radius for disk, sigma for Gauss).
+    #     rad : `~astropy.units.Quantity` with angle units
+    #         Offset angle
 
-        Returns
-        -------
-        psf : `TablePSF`
-            Table PSF
+    #     Returns
+    #     -------
+    #     psf : `TablePSF`
+    #         Table PSF
 
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from astropy.coordinates import Angle
-        >>> from gammapy.irf import TablePSF
-        >>> rad = Angle(np.linspace(0, 0.7, 100), 'deg')
-        >>> psf = TablePSF.from_shape(shape='gauss', width='0.2 deg', rad=rad)
-        """
-        width = Angle(width)
-        rad = Angle(rad)
+    #     Examples
+    #     --------
+    #     >>> import numpy as np
+    #     >>> from astropy.coordinates import Angle
+    #     >>> from gammapy.irf import TablePSF
+    #     >>> rad = Angle(np.linspace(0, 0.7, 100), 'deg')
+    #     >>> psf = TablePSF.from_shape(shape='gauss', width='0.2 deg', rad=rad)
+    #     """
+    #     width = Angle(width)
+    #     rad = Angle(rad)
 
-        if shape == "disk":
-            amplitude = 1 / (np.pi * width.radian ** 2)
-            psf_value = np.where(rad < width, amplitude, 0)
-        elif shape == "gauss":
-            gauss2d_pdf = Gauss2DPDF(sigma=width.radian)
-            psf_value = gauss2d_pdf(rad.radian)
-        else:
-            raise ValueError(f"Invalid shape: {shape}")
+    #     if shape == "disk":
+    #         amplitude = 1 / (np.pi * width.radian ** 2)
+    #         psf_value = np.where(rad < width, amplitude, 0)
+    #     elif shape == "gauss":
+    #         gauss2d_pdf = Gauss2DPDF(sigma=width.radian)
+    #         psf_value = gauss2d_pdf(rad.radian)
+    #     else:
+    #         raise ValueError(f"Invalid shape: {shape}")
 
-        psf_value = u.Quantity(psf_value, "sr^-1")
+    #     psf_value = u.Quantity(psf_value, "sr^-1")
 
-        return cls(rad, psf_value)
+    # return cls(rad, psf_value)
 
-    def info(self):
-        """Print basic info."""
-        ss = array_stats_str(self.rad.deg, "offset")
-        ss += f"integral = {self.integral()}\n"
+    # def info(self):
+    #     """Print basic info."""
+    #     ss = array_stats_str(self.rad.deg, "offset")
+    #     ss += f"integral = {self.integral()}\n"
 
-        for containment in [68, 80, 95]:
-            radius = self.containment_radius(0.01 * containment)
-            ss += f"containment radius {radius.deg} deg for {containment}%\n"
+    #     for containment in [68, 80, 95]:
+    #         radius = self.containment_radius(0.01 * containment)
+    #         ss += f"containment radius {radius.deg} deg for {containment}%\n"
 
-        return ss
+    #     return ss
 
     def evaluate(self, rad):
         r"""Evaluate PSF.
@@ -280,22 +284,22 @@ class EnergyDependentTablePSF:
         points = (self.energy, rad)
         return ScaledRegularGridInterpolator(points=points, values=values, fill_value=1)
 
-    def __str__(self):
-        ss = "EnergyDependentTablePSF\n"
-        ss += "-----------------------\n"
-        ss += "\nAxis info:\n"
-        ss += "  " + array_stats_str(self.rad.to("deg"), "rad")
-        ss += "  " + array_stats_str(self.energy, "energy")
-        ss += "\nContainment info:\n"
-        # Print some example containment radii
-        fractions = [0.68, 0.95]
-        energies = u.Quantity([10, 100], "GeV")
-        for fraction in fractions:
-            rads = self.containment_radius(energy=energies, fraction=fraction)
-            for energy, rad in zip(energies, rads):
-                ss += f"  {100 * fraction}% containment radius at {energy:3.0f}: {rad:.2f}\n"
+    # def __str__(self):
+    #     ss = "EnergyDependentTablePSF\n"
+    #     ss += "-----------------------\n"
+    #     ss += "\nAxis info:\n"
+    #     ss += "  " + array_stats_str(self.rad.to("deg"), "rad")
+    #     ss += "  " + array_stats_str(self.energy, "energy")
+    #     ss += "\nContainment info:\n"
+    #     # Print some example containment radii
+    #     fractions = [0.68, 0.95]
+    #     energies = u.Quantity([10, 100], "GeV")
+    #     for fraction in fractions:
+    #         rads = self.containment_radius(energy=energies, fraction=fraction)
+    #         for energy, rad in zip(energies, rads):
+    #             ss += f"  {100 * fraction}% containment radius at {energy:3.0f}: {rad:.2f}\n"
 
-        return ss
+    #     return ss
 
     @classmethod
     def from_fits(cls, hdu_list):
@@ -333,7 +337,7 @@ class EnergyDependentTablePSF:
         return hdu_list
 
     @classmethod
-    def read(cls, filename):
+    def read(cls, path_to_file):
         """Create `EnergyDependentTablePSF` from ``gtpsf``-format FITS file.
 
         Parameters
@@ -341,7 +345,7 @@ class EnergyDependentTablePSF:
         filename : str
             File name
         """
-        with fits.open(make_path(filename), memmap=False) as hdulist:
+        with fits.open(Path(path_to_file), memmap=False) as hdulist:
             return cls.from_fits(hdulist)
 
     def write(self, *args, **kwargs):
@@ -396,44 +400,44 @@ class EnergyDependentTablePSF:
         psf_value = self.evaluate(energy=energy, method=method)[0, :]
         return TablePSF(self.rad, psf_value, **kwargs)
 
-    def table_psf_in_energy_band(self, energy_band, spectrum=None, n_bins=11, **kwargs):
-        """Average PSF in a given energy band.
+    # def table_psf_in_energy_band(self, energy_band, spectrum=None, n_bins=11, **kwargs):
+    #     """Average PSF in a given energy band.
 
-        Expected counts in sub energy bands given the given exposure
-        and spectrum are used as weights.
+    #     Expected counts in sub energy bands given the given exposure
+    #     and spectrum are used as weights.
 
-        Parameters
-        ----------
-        energy_band : `~astropy.units.Quantity`
-            Energy band
-        spectrum : `~gammapy.modeling.models.SpectralModel`
-            Spectral model used for weighting the PSF. Default is a power law
-            with index=2.
-        n_bins : int
-            Number of energy points in the energy band, used to compute the
-            weigthed PSF.
+    #     Parameters
+    #     ----------
+    #     energy_band : `~astropy.units.Quantity`
+    #         Energy band
+    #     spectrum : `~gammapy.modeling.models.SpectralModel`
+    #         Spectral model used for weighting the PSF. Default is a power law
+    #         with index=2.
+    #     n_bins : int
+    #         Number of energy points in the energy band, used to compute the
+    #         weigthed PSF.
 
-        Returns
-        -------
-        psf : `TablePSF`
-            Table PSF
-        """
-        from gammapy.modeling.models import PowerLawSpectralModel, TemplateSpectralModel
+    #     Returns
+    #     -------
+    #     psf : `TablePSF`
+    #         Table PSF
+    #     """
+    #     from gammapy.modeling.models import PowerLawSpectralModel, TemplateSpectralModel
 
-        if spectrum is None:
-            spectrum = PowerLawSpectralModel()
+    #     if spectrum is None:
+    #         spectrum = PowerLawSpectralModel()
 
-        exposure = TemplateSpectralModel(self.energy, self.exposure)
+    #     exposure = TemplateSpectralModel(self.energy, self.exposure)
 
-        e_min, e_max = energy_band
-        energy = MapAxis.from_energy_bounds(e_min, e_max, n_bins).edges
+    #     e_min, e_max = energy_band
+    #     energy = MapAxis.from_energy_bounds(e_min, e_max, n_bins).edges
 
-        weights = spectrum(energy) * exposure(energy)
-        weights /= weights.sum()
+    #     weights = spectrum(energy) * exposure(energy)
+    #     weights /= weights.sum()
 
-        psf_value = self.evaluate(energy=energy)
-        psf_value_weighted = weights[:, np.newaxis] * psf_value
-        return TablePSF(self.rad, psf_value_weighted.sum(axis=0), **kwargs)
+    #     psf_value = self.evaluate(energy=energy)
+    #     psf_value_weighted = weights[:, np.newaxis] * psf_value
+    #     return TablePSF(self.rad, psf_value_weighted.sum(axis=0), **kwargs)
 
     def containment_radius(self, energy, fraction=0.68):
         """Containment radius.
@@ -477,9 +481,9 @@ class EnergyDependentTablePSF:
         rad_max = np.atleast_1d(u.Quantity(rad_max))
         return self._interpolate_containment((energy, rad_max))
 
-    def info(self):
-        """Print basic info"""
-        print(str(self))
+    # def info(self):
+    #     """Print basic info"""
+    #     print(str(self))
 
     def plot_psf_vs_rad(self, energies=None, ax=None, **kwargs):
         """Plot PSF vs radius.
@@ -545,27 +549,27 @@ class EnergyDependentTablePSF:
         plt.ylim(0, 1.5e11)
         plt.tight_layout()
 
-    def stack(self, psf):
-        """Stack two EnergyDependentTablePSF objects.s
+    # def stack(self, psf):
+    #     """Stack two EnergyDependentTablePSF objects.s
 
-        Parameters
-        ----------
-        psf : `EnergyDependentTablePSF`
-            PSF to stack.
+    #     Parameters
+    #     ----------
+    #     psf : `EnergyDependentTablePSF`
+    #         PSF to stack.
 
-        Returns
-        -------
-        stacked_psf : `EnergyDependentTablePSF`
-            Stacked PSF.
+    #     Returns
+    #     -------
+    #     stacked_psf : `EnergyDependentTablePSF`
+    #         Stacked PSF.
 
-        """
-        exposure = self.exposure + psf.exposure
-        psf_value = self.psf_value.T * self.exposure + psf.psf_value.T * psf.exposure
+    #     """
+    #     exposure = self.exposure + psf.exposure
+    #     psf_value = self.psf_value.T * self.exposure + psf.psf_value.T * psf.exposure
 
-        with np.errstate(invalid="ignore"):
-            # exposure can be zero
-            psf_value = np.nan_to_num(psf_value / exposure)
+    #     with np.errstate(invalid="ignore"):
+    #         # exposure can be zero
+    #         psf_value = np.nan_to_num(psf_value / exposure)
 
-        return self.__class__(
-            energy=self.energy, rad=self.rad, psf_value=psf_value.T, exposure=exposure
-        )
+    #     return self.__class__(
+    #         energy=self.energy, rad=self.rad, psf_value=psf_value.T, exposure=exposure
+    #     )
