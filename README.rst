@@ -47,7 +47,7 @@ Install the package with::
 You can also install the package directly from the Git server via ``pip`` (no cloning needed)
 into any Python environment easily with::
 
-  pip install git+https://git.km3net.de/km3py/km3irf
+  pip install km3irf
 
 To install all the development dependencies, in case you want to contribute or
 run the test suite::
