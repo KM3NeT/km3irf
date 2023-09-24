@@ -7,7 +7,7 @@ A set of functions which are necessary for calculation of IRF
 import numpy as np
 import pandas as pd
 import numba as nb
-from numba import jit, prange
+from numba import jit, njit, prange, float64, int64
 from km3pipe.math import azimuth, zenith
 import astropy.coordinates as ac
 from astropy.time import Time
@@ -48,7 +48,7 @@ def calc_theta(table, mc=True):
     return theta
 
 
-def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
+def edisp_3D(e_bins, m_bins, t_bins, dataset, weights):
     """
     Calculate the 3-dimensional energy dispersion matrix.
     This is just a historgram with the simulated events.
@@ -64,7 +64,7 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
         of zenith angle bins in rad
     dataset : pandas.DataFrame
         with the events
-    weights : Array, default 1
+    weights : Array
         of weights for each event
 
     Returns
@@ -74,14 +74,14 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
 
     """
 
-    if "theta_mc" not in dataset.keys():
+    if "theta_mc" not in dataset.columns:
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
-    if "migra" not in dataset.keys():
+    if "migra" not in dataset.columns:
         dataset["migra"] = dataset.E / dataset.E_mc
 
-    theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
-    migra_bins = pd.cut(dataset.migra, m_bins, labels=False).to_numpy()
+    theta_bins = np.searchsorted(t_bins, dataset.theta_mc) - 1
+    energy_bins = np.searchsorted(e_bins, dataset.E_mc) - 1
+    migra_bins = np.searchsorted(m_bins, dataset.migra) - 1
 
     edisp = fill_edisp_3D(
         e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, weights
@@ -90,26 +90,35 @@ def edisp_3D(e_bins, m_bins, t_bins, dataset, weights=1):
     return edisp
 
 
-@jit(nopython=True, fastmath=False, parallel=True)
+@njit(fastmath=True, parallel=True)
 def fill_edisp_3D(e_bins, m_bins, t_bins, energy_bins, migra_bins, theta_bins, weights):
     """
     numba accelerated helper function to fill the events into the energy disperaion matrix.
-    Needed because numba does not work with pandas but needs numpy arrays.
-    fastmath is disabled because it gives different results.
 
     """
 
-    edisp = np.zeros((len(t_bins) - 1, len(m_bins) - 1, len(e_bins) - 1))
-    for i in prange(len(t_bins) - 1):
-        for j in range(len(m_bins) - 1):
-            for k in range(len(e_bins) - 1):
-                mask = (energy_bins == k) & (migra_bins == j) & (theta_bins == i)
-                edisp[i, j, k] = np.sum(mask * weights)
+    num_t_bins = len(t_bins) - 1
+    num_m_bins = len(m_bins) - 1
+    num_e_bins = len(e_bins) - 1
 
-    return edisp
+    hist = np.zeros((num_t_bins, num_m_bins, num_e_bins), dtype=np.float64)
+
+    num_events = len(energy_bins)
+    for i in prange(num_events):
+        t_idx = theta_bins[i]
+        m_idx = migra_bins[i]
+        e_idx = energy_bins[i]
+        if (
+            0 <= e_idx < num_e_bins
+            and 0 <= m_idx < num_m_bins
+            and 0 <= t_idx < num_t_bins
+        ):
+            hist[t_idx, m_idx, e_idx] += weights[i]
+
+    return hist
 
 
-def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
+def psf_3D(e_bins, r_bins, t_bins, dataset, weights):
     """
     Calculate the 3-dimensional PSF matrix.
     This is a historgram with the simulated evenets.
@@ -125,7 +134,7 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
         of zenith angle bins in rad
     dataset : pandas.DataFrame
         with the events
-    weights : Array, default 1
+    weights : Array
         of weights for each event
 
     Returns
@@ -135,7 +144,7 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
 
     """
 
-    if "theta_mc" not in dataset.keys():
+    if "theta_mc" not in dataset:
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
 
     scalar_prod = (
@@ -143,36 +152,58 @@ def psf_3D(e_bins, r_bins, t_bins, dataset, weights=1):
         + dataset.dir_y * dataset.dir_y_mc
         + dataset.dir_z * dataset.dir_z_mc
     )
-    scalar_prod[scalar_prod > 1.0] = 1.0
+    scalar_prod = np.clip(scalar_prod, -1.0, 1.0)
     rad = np.arccos(scalar_prod) * 180 / np.pi  # in deg now
-    dataset["rad"] = rad
 
-    theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
-    rad_bins = pd.cut(rad, r_bins, labels=False).to_numpy()
+    theta_bins = np.searchsorted(t_bins, dataset.theta_mc) - 1
+    energy_bins = np.searchsorted(e_bins, dataset.E_mc) - 1
+    rad_bins = np.searchsorted(r_bins, rad) - 1
 
     psf = fill_psf_3D(
-        e_bins, r_bins, t_bins, energy_bins, rad_bins, theta_bins, weights
+        e_bins,
+        r_bins,
+        t_bins,
+        energy_bins,
+        rad_bins,
+        theta_bins,
+        weights,
     )
 
     return psf
 
 
-# do not use fastmath=True -- gives 300 aditional entries and no gain
-@jit(nopython=True, fastmath=False, parallel=True)
-def fill_psf_3D(e_bins, r_bins, t_bins, energy_bins, rad_bins, theta_bins, weights):
+@njit(fastmath=True, parallel=True)
+def fill_psf_3D(
+    e_bins,
+    r_bins,
+    t_bins,
+    energy_bins,
+    rad_bins,
+    theta_bins,
+    weights,
+):
     """
-    numba accelerated helper function to fill the events into the PSF matrix.
+    numba accelerated helper function to calculate point spread function.
 
     """
-    psf = np.zeros((len(r_bins) - 1, len(t_bins) - 1, len(e_bins) - 1))
-    for j in prange(len(r_bins) - 1):
-        for i in range(len(t_bins) - 1):
-            for k in range(len(e_bins) - 1):
-                mask = (energy_bins == k) & (rad_bins == j) & (theta_bins == i)
-                psf[j, i, k] = np.sum(mask * weights)
+    num_e_bins = len(e_bins) - 1
+    num_r_bins = len(r_bins) - 1
+    num_t_bins = len(t_bins) - 1
+    hist = np.zeros((num_r_bins, num_t_bins, num_e_bins), dtype=np.float64)
 
-    return psf
+    num_events = len(energy_bins)
+    for i in prange(num_events):
+        e_idx = energy_bins[i]
+        r_idx = rad_bins[i]
+        t_idx = theta_bins[i]
+        if (
+            0 <= e_idx < num_e_bins
+            and 0 <= r_idx < num_r_bins
+            and 0 <= t_idx < num_t_bins
+        ):
+            hist[r_idx, t_idx, e_idx] += weights[i]
+
+    return hist
 
 
 def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
@@ -199,11 +230,11 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
 
     """
 
-    if "theta_mc" not in dataset.keys():
+    if "theta_mc" not in dataset:
         dataset["theta_mc"] = calc_theta(dataset, mc=True)
 
-    theta_bins = pd.cut(dataset.theta_mc, t_bins, labels=False).to_numpy()
-    energy_bins = pd.cut(dataset.E_mc, e_bins, labels=False).to_numpy()
+    theta_bins = np.searchsorted(t_bins, dataset.theta_mc) - 1
+    energy_bins = np.searchsorted(e_bins, dataset.E_mc) - 1
 
     w2 = dataset.weight_w2.to_numpy()
     E = dataset.E_mc.to_numpy()
@@ -212,7 +243,7 @@ def aeff_2D(e_bins, t_bins, dataset, gamma=1.4, nevents=2e7):
     return aeff
 
 
-@jit(nopython=True, fastmath=False, parallel=True)
+@njit(fastmath=False, parallel=True)
 def fill_aeff_2D(e_bins, t_bins, energy_bins, theta_bins, w2, E, gamma, nevents):
     """
     numba accelerated helper function to calculate effective area.

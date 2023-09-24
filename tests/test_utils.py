@@ -26,6 +26,7 @@ class TestUtils(unittest.TestCase):
 class TestDrawClasses(unittest.TestCase):
     def setUp(self):
         self.aeff = utils.DrawAeff()
+        self.edisp = utils.DrawEdisp()
 
     def test_init(self):
         assert len(self.aeff.energy_center) == 48
@@ -40,3 +41,13 @@ class TestDrawClasses(unittest.TestCase):
 
         with mpl_plot_check():
             self.aeff.plot_zenith_dependence()
+
+        with mpl_plot_check():
+            self.edisp.plot_migration()
+
+        with mpl_plot_check():
+            self.edisp.plot_bias()
+
+
+if __name__ == "__main__":
+    unittest.main()
