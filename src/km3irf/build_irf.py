@@ -6,17 +6,15 @@ It allows to produce different .fits files from original data dst.root files , w
 """
 import numpy as np
 
-# import awkward as ak
 import pandas as pd
 import uproot as ur
 
 from km3io import OfflineReader
 from .irf_tools import aeff_2D, psf_3D, edisp_3D
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
+# import matplotlib.pyplot as plt
+# from matplotlib import cm
 
-# from matplotlib.colors import LogNorm
 
 from astropy.io import fits
 import astropy.units as u
@@ -27,19 +25,9 @@ from scipy.ndimage import gaussian_filter1d, gaussian_filter
 from .utils import data_dir
 from os import path
 
-# from collections import defaultdict
-
-# import sys
-# sys.path.append('../')
-# from python_scripts.irf_utils import aeff_2D, psf_3D
-# from python_scripts.func import get_cut_mask
-# from python_scripts.func import WriteAeff
-# from python_scripts.func import WritePSF
-
 
 class DataContainer:
-    """
-    General class, which allows operating with IRF components such as:
+    """General class, which allows operating with IRF components such as:
     Effective area (aeff), Point spread function (psf), Energy dispersion (edisp).
 
     Attributes
@@ -48,7 +36,6 @@ class DataContainer:
         input dst.root file with data
     no_bdt : bool
         with/out bdt information in input file
-
     """
 
     def __init__(self, infile, no_bdt=False):
@@ -57,35 +44,29 @@ class DataContainer:
         self.df = unpack_data(no_bdt, self.f_uproot)
 
     def apply_cuts(self):
-        """
-        Apply cuts to the created data frame.
+        """Apply cuts to the created data frame.
 
         Returns
         -------
         None
-
         """
         mask = get_cut_mask(self.df.bdt0, self.df.bdt1, self.df.dir_z)
         self.df = self.df[mask].copy()
         return None
-        # df_cut = self.df[mask].copy()
-        # return df_cut
 
     def weight_calc(self, tag, weight_factor=-2.5):
-        r"""
-        Calculate the normalized weight factor for each event.
+        r"""Calculate the normalized weight factor for each event.
 
         Parameters
         ----------
         tag : str
-            poddible options "nu" or "nubar"
+            possible value "nu" or "nubar"
         weight_factor : float, default -2.5
             spectral index for re-weight data
 
         Returns
         -------
         weights : Array
-
         """
         try:
             alpha_value = self.f_km3io.header.spectrum.alpha
@@ -94,41 +75,33 @@ class DataContainer:
             print("your input data file has no header, alpha_value set to default -1.4")
             alpha_value = -1.4
 
-        weights = dict()
+        weights = {}
         weights[tag] = (self.df.E_mc ** (weight_factor - alpha_value)).to_numpy()
         weights[tag] *= len(self.df) / weights[tag].sum()
         return weights
 
-    @staticmethod
-    def merge_flavors(df_nu, df_nubar):
-        """
-        Merge two data frames with differnt flavors in one.
+    def merge_flavors(self, df_flavor):
+        """Merge two data frames with differnt flavors in one.
 
         Parameters
         ----------
-        df_nu : pandas.DataFrame
-            data frame for 'nu'
-        df_nubar : pandas.DataFrame
-            data frame for 'nubar'
+        df_flavor : pandas.DataFrame
+            data frame with another flavor 'nu' or 'anu'
 
         Returns
         -------
-        pandas.DataFrame
-            merged pandas data frame
-
+        None
         """
-        df_merged = pd.concat([df_nu, df_nubar], ignore_index=True)
-        return df_merged
+        self.df = pd.concat([self.df, df_flavor], ignore_index=True)
 
     def build_aeff(
         self,
         weight_factor=-2.5,
-        cos_theta_binE=np.linspace(1, -1, 13),
-        energy_binE=np.logspace(2, 8, 49),
+        cos_theta_binE=None,
+        energy_binE=None,
         output="aeff.fits",
     ):
-        """
-        Build Effective Area 2D .fits file.
+        """Build Effective Area 2D .fits file.
 
         Parameters
         ----------
@@ -144,8 +117,14 @@ class DataContainer:
         Returns
         -------
         None
-
         """
+
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 13)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 49)
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
@@ -172,23 +151,16 @@ class DataContainer:
 
     def build_psf(
         self,
-        cos_theta_binE=np.linspace(1, -1, 7),
-        energy_binE=np.logspace(2, 8, 25),
-        rad_binE=np.concatenate(
-            (
-                np.linspace(0, 1, 20, endpoint=False),
-                np.linspace(1, 5, 40, endpoint=False),
-                np.linspace(5, 30, 51),
-                [180.0],
-            )
-        ),
+        cos_theta_binE=None,
+        energy_binE=None,
+        rad_binE=None,
         norm=False,
         smooth=True,
         smooth_norm=True,
+        weights=None,
         output="psf.fits",
     ):
-        """
-        Build Point Spread Function 3D .fits file.
+        """Build Point Spread Function 3D .fits file.
 
         Parameters
         ----------
@@ -197,7 +169,7 @@ class DataContainer:
         energy_binE : Array, default np.logspace(2, 8, 25)
             log numpy array of enegy bins
         rad_binE : Array
-            of linear radial bins (20 bins for 0-1 deg, 40 bins for 1-5 deg,
+            of linear radial bins, default (20 bins for 0-1 deg, 40 bins for 1-5 deg,
             50 bins for 5-30 deg, + 1 final bin up to 180 deg)
         norm : bool, default False
             enable or disable normalization
@@ -206,27 +178,47 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
+        weights : Array, default None
+            weights can be calculated using weight_calc
         output : str, default "psf.fits"
             name of generated PSF file with extension .fits
 
         Returns
         -------
         None
-
         """
+
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 7)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 25)
+
+        if rad_binE == None:
+            rad_binE = np.concatenate(
+                (
+                    np.linspace(0, 1, 20, endpoint=False),
+                    np.linspace(1, 5, 40, endpoint=False),
+                    np.linspace(5, 30, 51),
+                    [180.0],
+                )
+            )
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
         theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
         rad_binC = 0.5 * (rad_binE[1:] + rad_binE[:-1])
 
+        if weights is None:
+            weights = np.ones(len(self.df), dtype=np.float64)
         # Fill histogram for PSF
         psf = psf_3D(
             e_bins=energy_binE,
             r_bins=rad_binE,
             t_bins=theta_binE,
             dataset=self.df,
-            weights=1,
+            weights=weights,
         )
 
         # compute dP/dOmega
@@ -252,7 +244,12 @@ class DataContainer:
                 norm_psf_sm = (
                     psf * sizes_rad_binE[:, None, None] * (np.pi / 180) ** 2 * np.pi
                 ).sum(axis=0, keepdims=True)
-                psf = np.nan_to_num(psf / norm_psf_sm)
+
+                if np.any(norm_psf_sm == 0):
+                    print("Warning: Norm PSF sum is zero. Skipping normalization.")
+                else:
+                    psf = np.nan_to_num(psf / norm_psf_sm)
+
         elif smooth and norm:
             raise Exception("smooth and norm cannot be True at the same time")
 
@@ -263,7 +260,7 @@ class DataContainer:
             theta_binE,
             rad_binC,
             rad_binE,
-            psf_T=psf,
+            psf=psf,
         )
         new_psf_file.to_fits(file_name=output)
 
@@ -271,16 +268,16 @@ class DataContainer:
 
     def build_edisp(
         self,
-        cos_theta_binE=np.linspace(1, -1, 7),
-        energy_binE=np.logspace(2, 8, 25),
-        migra_binE=np.logspace(-5, 2, 57),
+        cos_theta_binE=None,
+        energy_binE=None,
+        migra_binE=None,
         norm=False,
         smooth=True,
         smooth_norm=True,
+        weights=None,
         output="edisp.fits",
     ):
-        """
-        Build Energy dispertion 3D .fits file.
+        """Build Energy dispertion 3D .fits file.
 
         Parameters
         ----------
@@ -297,19 +294,32 @@ class DataContainer:
         smooth_norm : bool, default True
             enable or disable smearing with normalization,
             can't be the same with norm
+        weights : Array, default None
+            weights can be calculated using weight_calc
         output : str, default "edisp.fits"
             name of generated Edisp file with extension .fits
 
         Returns
         -------
         None
-
         """
+        if cos_theta_binE == None:
+            cos_theta_binE = np.linspace(1, -1, 7)
+
+        if energy_binE == None:
+            energy_binE = np.logspace(2, 8, 25)
+
+        if migra_binE == None:
+            migra_binE = np.logspace(-5, 2, 57)
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
         theta_binC = np.arccos(0.5 * (cos_theta_binE[:-1] + cos_theta_binE[1:]))
         migra_binC = np.sqrt(migra_binE[:-1] * migra_binE[1:])
+
+        if weights is None:
+            weights = np.ones(len(self.df), dtype=np.float64)
 
         # fill histogram for Edisp
         edisp = edisp_3D(
@@ -317,7 +327,7 @@ class DataContainer:
             m_bins=migra_binE,
             t_bins=theta_binE,
             dataset=self.df,
-            weights=1,
+            weights=weights,
         )
 
         sizes_migra_binE = np.diff(migra_binE)
@@ -341,7 +351,11 @@ class DataContainer:
             edisp /= sizes_migra_binE[:, None]
             if smooth_norm:
                 m_normed = edisp * sizes_migra_binE[:, np.newaxis]
-                edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
+
+                if np.any(m_normed.sum(axis=1, keepdims=True) == 0):
+                    print("Warning: Zero Division.")
+                else:
+                    edisp = np.nan_to_num(edisp / m_normed.sum(axis=1, keepdims=True))
         elif smooth and norm:
             raise Exception("smooth and norm cannot be True at the same time")
 
@@ -352,7 +366,7 @@ class DataContainer:
             theta_binE,
             migra_binC,
             migra_binE,
-            edisp_T=edisp,
+            edisp=edisp,
         )
         new_edisp_file.to_fits(file_name=output)
 
@@ -360,8 +374,7 @@ class DataContainer:
 
 
 def unpack_data(no_bdt, uproot_file):
-    """
-    Retrieve information from data file and pack it to pandas.DataFrame.
+    """Retrieve information from data file and pack it to pandas.DataFrame.
 
     Parameters
     ----------
@@ -373,10 +386,9 @@ def unpack_data(no_bdt, uproot_file):
     Returns
     -------
     pandas.DataFrame
-
     """
     # Access data arrays
-    data_uproot = dict()
+    data_uproot = {}
 
     E_evt = uproot_file["E/Evt"]
 
@@ -398,15 +410,11 @@ def unpack_data(no_bdt, uproot_file):
         data_uproot["bdt0"] = bdt[:, 0]
         data_uproot["bdt1"] = bdt[:, 1]
 
-    # create Data Frames
-    df_data = pd.DataFrame(data_uproot)
-
-    return df_data
+    return pd.DataFrame.from_dict(data_uproot)
 
 
 def get_cut_mask(bdt0, bdt1, dir_z):
-    """
-    Create a cut mask for chosen cuts
+    """Create a cut mask for chosen cuts
 
     Parameters
     ----------
@@ -421,19 +429,23 @@ def get_cut_mask(bdt0, bdt1, dir_z):
     Returns
     -------
     Array(bool)
-
     """
+
+    dir_z_deg = np.arccos(dir_z) * 180 / np.pi
 
     mask_down = bdt0 >= 11  # remove downgoing events
     clear_signal = bdt0 == 12  # very clear signal
-    loose_up = (np.arccos(dir_z) * 180 / np.pi < 80) & (
-        bdt1 > 0.0
+    loose_up = np.bitwise_and(
+        dir_z_deg < 80, bdt1 > 0.0
     )  # apply loose cut on upgoing events
-    strong_horizontal = (np.arccos(dir_z) * 180 / np.pi > 80) & (
-        bdt1 > 0.7
+    strong_horizontal = np.bitwise_and(
+        dir_z_deg > 80, bdt1 > 0.7
     )  # apply strong cut on horizontal events
 
-    return mask_down & (clear_signal | loose_up | strong_horizontal)
+    return np.bitwise_and(
+        mask_down,
+        np.bitwise_or(clear_signal, np.bitwise_or(loose_up, strong_horizontal)),
+    )
 
 
 # Class for writing aeff_2D to fits files
@@ -470,18 +482,16 @@ class WriteAeff:
             format="{}D".format(len(energy_binC) * len(theta_binC)),
             dim="({},{})".format(len(energy_binC), len(theta_binC)),
             unit="m2",
-            array=[aeff_T],
+            array=[aeff_T.T],
         )
 
     def to_fits(self, file_name):
-        """
-        Write Aeff to .fits file.
+        """Write Aeff to .fits file.
 
         Parameters
         ----------
         file_name : str
             should have .fits extension
-
         """
         cols = fits.ColDefs([self.col1, self.col2, self.col3, self.col4, self.col5])
         hdu = fits.PrimaryHDU()
@@ -514,7 +524,7 @@ class WritePSF:
         theta_binE,
         rad_binC,
         rad_binE,
-        psf_T,
+        psf,
     ):
         self.col1 = fits.Column(
             name="ENERG_LO",
@@ -557,12 +567,11 @@ class WritePSF:
             format="{}D".format(len(energy_binC) * len(theta_binC) * len(rad_binC)),
             dim="({},{},{})".format(len(energy_binC), len(theta_binC), len(rad_binC)),
             unit="sr-1",
-            array=[psf_T],
+            array=[psf],
         )
 
     def to_fits(self, file_name):
-        """
-        Write PSF to .fits file.
+        """Write PSF to .fits file.
 
         Parameters
         ----------
@@ -610,7 +619,7 @@ class WriteEdisp:
         t_bins_coarse,
         migra_binc,
         migra_bins,
-        edisp_T,
+        edisp,
     ):
         self.col1 = fits.Column(
             name="ENERG_LO",
@@ -654,12 +663,12 @@ class WriteEdisp:
             dim="({},{},{})".format(
                 len(e_binc_coarse), len(migra_binc), len(t_binc_coarse)
             ),
-            array=[edisp_T * np.diff(migra_bins)[:, None]],
+            # this correction is needed to fix bug of gammapy
+            array=[edisp * np.diff(migra_bins)[:, None]],
         )
 
     def to_fits(self, file_name):
-        """
-        Write Edisp to .fits file.
+        """Write Edisp to .fits file.
 
         Parameters
         ----------
