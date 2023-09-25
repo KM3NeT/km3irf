@@ -367,6 +367,8 @@ class PSF3D:
         ax.set_ylabel("Containment radius, [deg]", fontsize=label_fontsize)
         ax.tick_params(axis="both", which="major", labelsize=tick_fontsize)
 
+        return ax
+
     def plot_psf_vs_rad(self, theta="0 deg", energy=u.Quantity(10.0, "GeV"), **kwargs):
         """Plot PSF vs rad.
 
