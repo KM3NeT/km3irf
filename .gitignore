@@ -43,4 +43,4 @@ src/km3irf/data/all_in_one.fits
 use_cases/*.fits
 examples/*.fits
 use_cases/.ipynb_checkpoints/
-src/km3irf/.ipynb_checkpoints/
+src/km3irf/.ipynb_checkpoints/*

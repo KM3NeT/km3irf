@@ -13,16 +13,25 @@
 .. image:: https://img.shields.io/badge/License-BSD_3--Clause-blueviolet.svg
     :target: https://opensource.org/licenses/BSD-3-Clause
 
-KM3NeT instrument response function
+KM3NeT instrument response functions
 ====================================
 
 This project provides a versatile tool that can be used to quickly analyze the sensitivity of the **KM3NeT** detector for various source models.
 Currently it considers only point-like sources. The main feature of the tool is deep targeting to ``gammapy`` software.
+At same time it is independent from installation of ``gammapy`` software.
 For further analysis in ``gammapy``, ``km3irf`` provides next modules:
 
-* Event list
 * Instrument response function (IRF)
-* Data set
+
+  * Effective area (Aeff)
+
+  * Energy dispertion (Edisp)
+
+  * Point spread function (PSF)
+
+* Data set (*in progress*)
+
+* Event list (*in progress*)
 
 Installation
 ------------
@@ -47,8 +56,8 @@ Install the package with::
 
   make install
 
-You can also install the package directly from the Git server via ``pip`` (no cloning needed)
-into any Python environment easily with::
+You can also install the package directly from ``Pypi`` via ``pip`` package manager (no cloning needed).
+It can easily be done into any Python environment with next command::
 
   pip install km3irf
 

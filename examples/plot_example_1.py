@@ -54,13 +54,15 @@ weighted_dict.values()
 
 # %%
 # To create ``.fits`` for *Effective area*, we need to pass a pandas data frame as input.
+# Default name is ``aeff.fits``.
 
 test_irf.build_aeff()
 
 # %%
 # Point Spread Function
 # ---------------------
-# In this part we create ``.fits`` for *Point Spread Function*
+# In this part we create ``.fits`` for *Point Spread Function*.
+# Default name is ``psf.fits``.
 
 test_irf.build_psf()
 
@@ -68,6 +70,7 @@ test_irf.build_psf()
 # Energy dispertion
 # -----------------
 # In this part we create ``.fits`` for *Energy dispertion*
+# Default name is ``edisp.fits``.
 
 test_irf.build_edisp(norm=True, smooth=False, smooth_norm=False)
 

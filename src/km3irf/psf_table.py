@@ -188,6 +188,8 @@ class TablePSF:
             color="blue",
         )
 
+        return ax
+
 
 class EnergyDependentTablePSF:
     """Energy-dependent radially-symmetric table PSF (``gtpsf`` format).
