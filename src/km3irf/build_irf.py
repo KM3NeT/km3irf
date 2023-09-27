@@ -99,6 +99,7 @@ class DataContainer:
         weight_factor=-2.5,
         cos_theta_binE=None,
         energy_binE=None,
+        gen_events=None,
         output="aeff.fits",
     ):
         """Build Effective Area 2D .fits file.
@@ -111,6 +112,8 @@ class DataContainer:
             of linear bins for cos of zenith angle theta
         energy_binE : Array, default np.logspace(2, 8, 49)
             log numpy array of enegy bins
+        gen_events : int, default None
+            number of gnerated events, can be recided using km3io
         output : str, default "aeff.fits"
             name of generated Aeff file with extension .fits
 
@@ -125,6 +128,9 @@ class DataContainer:
         if energy_binE == None:
             energy_binE = np.logspace(2, 8, 49)
 
+        if gen_events == None:
+            gen_events = self.f_km3io.header.genvol.nunberOfEvents
+
         theta_binE = np.arccos(cos_theta_binE)
         # Bin centers
         energy_binC = np.sqrt(energy_binE[:-1] * energy_binE[1:])
@@ -137,7 +143,8 @@ class DataContainer:
                 t_bins=theta_binE,
                 dataset=self.df,
                 gamma=(-weight_factor),
-                nevents=self.df.shape[0],
+                # bug is here, nevents should be the number of generated events
+                nevents=gen_events,
             )
             * 2
         )  # two building blocks
